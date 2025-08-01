@@ -1,0 +1,494 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Seguimiento de Fondeo - KPI A&G{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ==== Encabezado del dashboard ==== */
+.dashboard-header {
+    display: flex;
+    padding: 0rem 1rem;
+    margin: -1rem -1rem 1rem -1rem;
+    border-radius: 6px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.title-section {
+    text-align: left;
+}
+
+.dashboard-title {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 0.1rem;
+}
+
+.dashboard-subtitle {
+    font-size: 0.9rem;
+    opacity: 0.85;
+    margin: 0;
+}
+
+.actions-section .btn-group {
+    margin-bottom: 0;
+}
+
+/* ==== Botones ==== */
+.btn-group {
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.35rem 0.7rem;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.btn-primary {
+    background: var(--secondary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0a58ca;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+/* ==== Tabla ==== */
+.table-container {
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.fondeos-table {
+    width: 100%;
+    min-width: 1100px; /* Menos scroll horizontal */
+    border-collapse: collapse;
+    font-size: 0.78rem;
+}
+
+.fondeos-table th {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    padding: 0.4rem;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 0.75rem;
+}
+
+.fondeos-table td {
+    padding: 0.3rem 0.3rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.fondeos-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.fondeos-table tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+/* ==== Filas separadoras/agrupadores ==== */
+.group-separator-row {
+    border-top: 2px solid #1a252f !important;
+}
+
+.group-separator-row td {
+    padding: 0.25rem !important;
+}
+
+.group-separator-cell {
+    position: relative;
+}
+
+.group-separator-cell::before {
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Efecto de separación visual */
+.group-separator-row + tr {
+    border-top: 1px solid #ddd;
+}
+
+.numeric {
+    text-align: right !important;
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding-right: 0.4rem !important;
+}
+
+.numeric.positive {
+    color: #27ae60;
+}
+
+.numeric.negative {
+    color: #e74c3c;
+}
+
+.total-row {
+    background-color: #daf0ff !important;
+    font-weight: 600;
+}
+
+/* ==== Resumen ==== */
+.stats-summary {
+    background: #f8f9fa;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.6rem;
+    text-align: center;
+}
+
+.record-count {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* ==== Scroll visible ==== */
+.table-wrapper::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* ==== Responsivo ==== */
+@media (max-width: 768px) {
+    .dashboard-header {
+        padding: 0.6rem;
+        margin: -1rem -1rem 1rem -1rem;
+    }
+    
+    .dashboard-title {
+        font-size: 1rem;
+    }
+    
+    .form-container {
+        padding: 0.4rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn {
+        justify-content: center;
+    }
+    
+    .fondeos-table {
+        font-size: 0.7rem;
+    }
+    
+    .fondeos-table th,
+    .fondeos-table td {
+        padding: 0.3rem;
+    }
+    
+    .group-separator-row td {
+        padding: 0.5rem 0.4rem !important;
+        font-size: 0.8rem !important;
+    }
+}
+.footer-main {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.875rem;
+    width: 100%;
+}
+
+.div-footer {
+    padding: 0.5rem 0;
+    color: rgba(255, 255, 255, 0.9);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header con botones -->
+<div class="dashboard-header">
+    <div class="header-content">
+        <div class="title-section">
+            <h1 class="dashboard-title">
+                <i class="bi bi-cash-stack me-2"></i>
+                Seguimiento de Fondeo
+            </h1>
+            <p class="dashboard-subtitle">
+                Fecha de generación: {{ fecha_generacion|date:"d/m/Y H:i" }}
+            </p>
+        </div>
+        <div class="actions-section">
+            <form method="post" style="display: inline;">
+                {% csrf_token %}
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i>
+                        Consultar Datos
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="exportarExcel()" {% if not fondeo_list %}disabled{% endif %}>
+                        <i class="bi bi-file-earmark-excel"></i>
+                        Exportar a Excel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Error Message -->
+{% if error %}
+<div class="error-alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    {{ error }}
+</div>
+{% endif %}
+
+<!-- Data Table -->
+{% if fondeo_list %}
+<div class="table-container">
+    <div class="table-wrapper">
+        <table class="fondeos-table">
+            <thead>
+                <tr>
+                    <th>Cód.</th>
+                    <th>Nombre</th>
+                    <th>Ahorra Fácil</th>
+                    <th>Con Semilla</th>
+                    <th>Ahorra Junior</th>
+                    <th>Con Ahorrito</th>
+                    <th>Total Ahorros</th>
+                    <th>CDAT</th>
+                    <th>Contractual</th>
+                    <th>Total CDAT - Contractual</th>
+                    <th>Total Captaciones</th>
+                    <th>Aportes</th>
+                    <th>Cartera</th>
+                    <th>Capt + Apo - Cart</th>
+                    <th>Recaudo Alcaldías</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in fondeo_list %}
+                    <!-- Fila de datos normal -->
+                    <tr {% if registro.CODSUCURSAL == "No" %}class="total-row"{% endif %}>
+                        <td>{{ registro.CODSUCURSAL|default:"-" }}</td>
+                        <td style="text-align: left; font-weight: 500;">{{ registro.SUCURSAL|default:"-" }}</td>
+                        <td class="numeric {% if registro.AHORRAFACIL|to_numeric > 0 %}positive{% elif registro.AHORRAFACIL|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.AHORRAFACIL|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.CONSEMILLA|to_numeric > 0 %}positive{% elif registro.CONSEMILLA|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.CONSEMILLA|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.JUNIOR|to_numeric > 0 %}positive{% elif registro.JUNIOR|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.JUNIOR|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.CONAHORRITO|to_numeric > 0 %}positive{% elif registro.CONAHORRITO|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.CONAHORRITO|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.TOTALAHORROS|to_numeric > 0 %}positive{% elif registro.TOTALAHORROS|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.TOTALAHORROS|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.CDAT|to_numeric > 0 %}positive{% elif registro.CDAT|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.CDAT|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.CONTRACTUAL|to_numeric > 0 %}positive{% elif registro.CONTRACTUAL|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.CONTRACTUAL|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.TOTCDATCONTRA|to_numeric > 0 %}positive{% elif registro.TOTCDATCONTRA|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.TOTCDATCONTRA|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.TOTALCAPTACIONES|to_numeric > 0 %}positive{% elif registro.TOTALCAPTACIONES|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.TOTALCAPTACIONES|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.APORTES|to_numeric > 0 %}positive{% elif registro.APORTES|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.APORTES|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.CARTERA|to_numeric > 0 %}positive{% elif registro.CARTERA|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.CARTERA|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.CAPAPOCART|to_numeric > 0 %}positive{% elif registro.CAPAPOCART|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.CAPAPOCART|floatformat:0|default:"0" }}
+                        </td>
+                        <td class="numeric {% if registro.RECAUDOALCALDIAS|to_numeric > 0 %}positive{% elif registro.RECAUDOALCALDIAS|to_numeric < 0 %}negative{% endif %}">
+                            {{ registro.RECAUDOALCALDIAS|floatformat:0|default:"0" }}
+                        </td>
+                    </tr>
+                    
+                    <!-- Separador después de filas con CODSUCURSAL = "No" -->
+                    {% if registro.CODSUCURSAL == "No" %}
+                        <tr class="group-separator-row">
+                            <td colspan="15" class="group-separator-cell">
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Stats Summary -->
+<div class="stats-summary">
+    <p class="record-count">
+        <i class="bi bi-database me-2"></i>
+        Total de registros: <strong>{{ fondeo_list|length }}</strong>
+    </p>
+</div>
+
+{% else %}
+<!-- Instructions Card -->
+<div class="instructions-card">
+    <div class="instructions-icon">
+        <i class="bi bi-info-circle-fill"></i>
+    </div>
+    <h4 class="instructions-title">Bienvenido al Dashboard de Fondeos</h4>
+    <p class="instructions-text">
+        Haz clic en <strong>"Consultar Datos"</strong> para cargar la información de fondeos más reciente.<br>
+        Una vez cargados los datos, podrás exportarlos a Excel para análisis detallado.
+    </p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function exportarExcel() {
+    // Show loading state
+    const btn = event.target;
+    const originalContent = btn.innerHTML;    
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Exportando...';
+    btn.disabled = true;
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "exportar_fondeo_excel" %}';
+
+    // Add CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = csrfToken;
+    form.appendChild(csrfInput);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+    
+    // Reset button after a delay
+    setTimeout(() => {
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+    }, 2000);
+}
+
+// Add smooth transitions and scroll indicator
+document.addEventListener('DOMContentLoaded', function() {
+    // Add fade-in animation to table
+    const table = document.querySelector('.table-container');
+    if (table) {
+        table.style.opacity = '0';
+        table.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            table.style.transition = 'all 0.5s ease';
+            table.style.opacity = '1';
+            table.style.transform = 'translateY(0)';
+        }, 100);
+    }
+    
+    // Add scroll indicator for horizontal scrolling
+    const tableWrapper = document.querySelector('.table-wrapper');
+    if (tableWrapper) {
+        // Check if horizontal scroll is needed
+        if (tableWrapper.scrollWidth > tableWrapper.clientWidth) {
+            // Add scroll hint
+            const scrollHint = document.createElement('div');
+            scrollHint.innerHTML = '<i class="bi bi-arrows-expand"></i> Desliza horizontalmente para ver más columnas';
+            scrollHint.style.cssText = `
+                background: #e3f2fd;
+                border: 1px solid #bbdefb;
+                color: #1565c0;
+                padding: 0.5rem;
+                text-align: center;
+                font-size: 0.8rem;
+                border-radius: 0 0 8px 8px;
+                margin-top: -1px;
+            `;
+            table.appendChild(scrollHint);
+            
+            // Hide hint after scroll
+            let scrollTimer;
+            tableWrapper.addEventListener('scroll', function() {
+                scrollHint.style.opacity = '0.5';
+                clearTimeout(scrollTimer);
+                scrollTimer = setTimeout(() => {
+                    scrollHint.style.opacity = '1';
+                }, 1000);
+            });
+        }
+    }
+    
+    // Add smooth scroll behavior for group separators
+    const groupRows = document.querySelectorAll('.group-separator-row');
+    groupRows.forEach(row => {
+        row.addEventListener('click', function() {
+            // Optional: Add click behavior for group separators
+            this.style.transform = 'scale(1.01)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 150);
+        });
+    });
+});
+</script>
+{% endblock %}

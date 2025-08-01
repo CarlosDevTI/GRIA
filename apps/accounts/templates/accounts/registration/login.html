@@ -1,0 +1,197 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/login.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'accounts/js/login.js' %}" defer></script>
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+</head>
+<body>
+    <div class="page-wrapper">        
+        <div class="login-wrapper">
+            <div class="login-container">
+                <!-- Placeholder para logo - reemplazar src con la ruta real -->
+                <img src="{% static 'images/GRIA2.0.png' %}" style="width: 150px" alt="GRIA 2.0 Logo" class="login-logo">
+                
+                <form method="post" class="login-form" id="loginForm">
+                    {% csrf_token %}
+                    
+                    <div class="group">
+                        <input type="text" id="id_username" name="username" required>
+                        <label for="id_username">Usuario</label>
+                    </div>
+                    
+                    <div class="group">
+                        <input type="password" id="id_password" name="password" required>
+                        <label for="id_password">Contraseña</label>
+                    </div>
+                    
+                    <!-- Error message placeholder -->
+                    <div class="error-message" id="error-message" style="display:none;">
+                        <p>Usuario o contraseña incorrectos.</p>
+                    </div>
+                    
+                    <button type="submit" class="button buttonBlue" id="submitBtn">
+                        <span id="button-text">Iniciar Sesión</span>
+                        <div class="ripples buttonRipples">
+                            <span class="ripplesCircle"></span>
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <footer class="footer-main">
+            <div class="div-footer">
+                <p>© Equipo desarrollo T.I. 2025</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Manejo mejorado de labels flotantes
+            function updateInputState($input) {
+                if ($input.val().trim() || $input.is(':focus')) {
+                    $input.addClass('used');
+                } else {
+                    $input.removeClass('used');
+                }
+            }
+
+            // Inicializar estado de inputs
+            $('input').each(function() {
+                updateInputState($(this));
+            });
+
+            // Eventos para inputs
+            $('input').on('blur focus keyup', function() {
+                updateInputState($(this));
+            });
+            
+            // Efecto de ripple mejorado
+            $(document).on('click', '.button', function(e) {
+                const $button = $(this);
+                const $ripples = $button.find('.ripples');
+                
+                // Crear múltiples ondas para efecto más fluido
+                $ripples.addClass('is-active');
+                
+                setTimeout(function() {
+                    $ripples.removeClass('is-active');
+                }, 600);
+            });
+
+            // Manejo del formulario - solo efectos visuales
+            $('#loginForm').on('submit', function(e) {
+                const $submitBtn = $('#submitBtn');
+                const $buttonText = $('#button-text');
+                
+                // Añadir estado de carga solo visualmente
+                $submitBtn.addClass('loading');
+                $buttonText.text('Verificando...');
+                
+                // El formulario se enviará normalmente
+                // Los efectos de loading se quitarán cuando la página se recargue
+            });
+        });
+
+        // Manejo de popup mejorado
+        function closePopup() {
+            const popup = document.getElementById('popup-message');
+            popup.style.animation = 'slideIn 0.3s ease-out reverse';
+            setTimeout(() => {
+                popup.style.display = 'none';
+                popup.style.animation = '';
+            }, 300);
+        }
+
+        // Manejo de mensajes de éxito desde URL
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const successMessage = urlParams.get('success_message');
+
+            if (successMessage) {
+                const popup = document.getElementById('popup-message');
+                const popupText = document.getElementById('popup-message-text');
+                
+                popupText.textContent = decodeURIComponent(successMessage);
+                popup.style.display = 'flex';
+                
+                // Limpiar URL
+                urlParams.delete('success_message');
+                const newUrl = `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`;
+                history.replaceState({}, '', newUrl);
+                
+                // Auto-cerrar después de 5 segundos
+                setTimeout(closePopup, 5000);
+            }
+        });
+
+        // Añadir efectos de teclado para accesibilidad
+        document.addEventListener('keydown', function(e) {
+            // Cerrar popup con Escape
+            if (e.key === 'Escape') {
+                const popup = document.getElementById('popup-message');
+                if (popup.style.display !== 'none') {
+                    closePopup();
+                }
+            }
+        });
+
+        // Mejorar accesibilidad con enfoque del teclado
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                document.body.classList.add('keyboard-navigation');
+            }
+        });
+
+        document.addEventListener('mousedown', function() {
+            document.body.classList.remove('keyboard-navigation');
+        });
+    </script>
+
+    <style>
+        /* Estilos adicionales para accesibilidad */
+        .keyboard-navigation .button:focus,
+        .keyboard-navigation input:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        /* Animaciones adicionales para mejor UX */
+        .login-container {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .group:focus-within label {
+            color: var(--primary-color);
+        }
+
+        /* Estados de hover mejorados */
+        .group:hover input:not(:focus) {
+            border-color: var(--primary-light);
+        }
+
+        .group:hover label {
+            color: var(--text-primary);
+        }
+    </style>
+</body>
+</html>

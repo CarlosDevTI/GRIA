@@ -1,0 +1,246 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cambiar Contraseña - KPI A&G</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/login.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'accounts/js/login.js' %}" defer></script>
+    <style>
+        /* Estilos específicos para change password - sobrescriben los del login */
+        .login-container {
+            max-width: 480px !important; /* Más ancho que el login */
+            padding: 1rem 1.5rem !important; /* Padding ajustado */
+        }
+
+        .login-logo {
+            width: 200px !important; /* Logo más pequeño */
+            margin-bottom: 1.5rem !important; /* Menos espacio */
+        }
+
+        h2 {
+            margin-bottom: 1rem !important; /* Menos espacio después del título */
+            font-size: 1.5rem !important; /* Título más pequeño */
+        }
+
+        h4 {
+            color: var(--text-secondary, #718096);
+            margin-bottom: 1.5rem !important; /* Espacio optimizado */
+            font-weight: 400;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .password-requirements {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem !important;
+            font-size: 0.875rem;
+            color: #4a5568;
+            line-height: 1.5;
+            text-align: left; /* Alineado a la izquierda para mejor lectura */
+        }
+
+        .password-requirements::before {
+            margin-right: 0.5rem;
+        }
+
+        .group {
+            margin-bottom: 1.5rem !important; /* Menos espacio entre campos */
+        }
+
+        .error-message {
+            margin-bottom: 1.5rem !important;
+        }
+
+        .button {
+            margin: 1.5rem 0 0rem 0 !important; /* Menos margen superior */
+        }
+
+        /* Responsive específico para change password */
+        @media (max-width: 480px) {
+            .login-container {
+                max-width: none !important;
+                margin: 1rem !important;
+                padding: 1.5rem !important;
+            }
+            
+            .login-logo {
+                width: 160px !important;
+            }
+            
+            h2 {
+                font-size: 1.25rem !important;
+            }
+            
+            h4 {
+                font-size: 0.875rem !important;
+            }
+            
+            .password-requirements {
+                font-size: 0.8rem !important;
+                padding: 0.875rem !important;
+            }
+        }
+
+        @media (max-width: 320px) {
+            .login-container {
+                padding: 1.25rem 1rem !important;
+            }
+            
+            .login-logo {
+                width: 140px !important;
+            }
+        }
+
+        /* Mejora visual para los labels más largos */
+        label {
+            font-size: 0.875rem !important;
+        }
+
+        input:focus ~ label, 
+        input.used ~ label {
+            font-size: 0.75rem !important;
+        }
+
+        /* Mejor espaciado vertical en pantallas pequeñas */
+        @media (max-height: 700px) {
+            .login-wrapper {
+                padding: 1rem !important;
+            }
+            
+            .login-logo {
+                width: 130px !important;
+                margin-bottom: 1rem !important;
+            }
+            
+            h2 {
+                margin-bottom: 0.75rem !important;
+            }
+            
+            h4 {
+                margin-bottom: 1rem !important;
+            }
+            
+            .password-requirements {
+                margin-bottom: 1.5rem !important;
+            }
+            
+            .group {
+                margin-bottom: 0.5rem !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="login-wrapper">
+            <div class="login-container">
+                <img src="{% static 'images/GRIA2.0.png' %}" alt="Logo KPI A&G" class="login-logo">
+                <h2>Cambiar Contraseña</h2>
+
+                <div class="password-requirements">
+                    La contraseña debe contener al menos 8 caracteres, incluyendo una letra mayúscula, una minúscula, un número y un carácter especial.
+                </div>
+
+                <form method="post" class="login-form" id="changePasswordForm">
+                    {% csrf_token %}
+                    <div class="group">
+                        {{ form.old_password }}<span class="highlight"></span><span class="bar"></span>
+                        <label for="{{ form.old_password.id_for_label }}">Contraseña actual</label>
+                    </div>
+                    <div class="group">
+                        {{ form.new_password1 }}<span class="highlight"></span><span class="bar"></span>
+                        <label for="{{ form.new_password1.id_for_label }}">Nueva contraseña</label>
+                    </div>
+                    <div class="group">
+                        {{ form.new_password2 }}<span class="highlight"></span><span class="bar"></span>
+                        <label for="{{ form.new_password2.id_for_label }}">Confirmar nueva contraseña</label>
+                    </div>
+                    {% if form.errors %}
+                        <div class="error-message">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <button type="submit" class="button buttonBlue" id="submitBtn">
+                        <span id="button-text">Cambiar Contraseña</span>
+                        <div class="ripples buttonRipples"><span class="ripplesCircle"></span></div>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <footer class="footer-main">
+            <div class="div-footer">
+                <p>©Equipo desarrollo T.I. 2025</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Reutilizar funcionalidad del login pero con ID específico
+            function updateInputState($input) {
+                if ($input.val().trim() || $input.is(':focus')) {
+                    $input.addClass('used');
+                } else {
+                    $input.removeClass('used');
+                }
+            }
+
+            // Inicializar estado de inputs
+            $('input').each(function() {
+                updateInputState($(this));
+            });
+
+            // Eventos para inputs
+            $('input').on('blur focus keyup', function() {
+                updateInputState($(this));
+            });
+            
+            // Efecto de ripple
+            $(document).on('click', '.button', function(e) {
+                const $button = $(this);
+                const $ripples = $button.find('.ripples');
+                
+                $ripples.addClass('is-active');
+                
+                setTimeout(function() {
+                    $ripples.removeClass('is-active');
+                }, 600);
+            });
+
+            // Manejo del formulario de cambio de contraseña
+            $('#changePasswordForm').on('submit', function(e) {
+                const $submitBtn = $('#submitBtn');
+                const $buttonText = $('#button-text');
+                
+                // Efectos visuales mientras se procesa
+                $submitBtn.addClass('loading');
+                $buttonText.text('Cambiando...');
+                
+                // El formulario se enviará normalmente
+            });
+
+            // Mejorar accesibilidad con navegación por teclado
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    document.body.classList.add('keyboard-navigation');
+                }
+            });
+
+            document.addEventListener('mousedown', function() {
+                document.body.classList.remove('keyboard-navigation');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Acceso No Autorizado{% endblock %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h1 class="display-4"><i class="bi bi-exclamation-triangle-fill"></i> Acceso No Autorizado</h1>
+                </div>
+                <div class="card-body">
+                    <p class="lead">No tienes un rol asignado que te permita acceder a un dashboard.</p>
+                    <p>Por favor, contacta al administrador del sistema para que te asigne los permisos correspondientes.</p>
+                    <a href="{% url 'logout' %}" class="btn btn-primary mt-3">Cerrar Sesión</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

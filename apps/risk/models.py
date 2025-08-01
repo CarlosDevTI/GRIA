@@ -1,0 +1,3 @@
+from django.db import models
+
+# APLICACION SIN MODELOS, NO GUARDAREMOS NADA TODAVIA

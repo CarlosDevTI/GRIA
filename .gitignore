@@ -1,0 +1,28 @@
+#* ENTORNO VIRTUAL DE PYTHON
+/venv/
+
+#* ARCHIVOS CACHÉ DE PYTHON
+__pycache__/
+*.pyc
+
+#* ARCHIVOS DE ENTORNO (CONTIENEN SECRETOS)
+.env
+*.env
+
+#* ARCHIVOS DE REGISTRO
+*.log
+
+#* ARCHIVOS DEL SISTEMA OPERATIVO
+.DS_Store
+Thumbs.db
+
+#* ARCHIVOS DE IDEs
+.vscode/
+!.vscode/Settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea/
+
+#* DIRECTORIO DE ARCHIVOS ESTÁTICOS QUE CREA DJANGO
+/static_collected/
+/staticfiles/
