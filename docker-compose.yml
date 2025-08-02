@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  web:
+  #* CONSTRUIR LA IMAGEN EN EL DIRECTORIO ACTUAL
+    build: .
+    #* 0.0.0.0:8002 PARA QUE PUEDA SER ACCESIBLE
+    command: python manage.py runserver 0.0.0.0:8002
+    #* 'volumes' SINCRONIZA LA CARPETA CON LA DEL CONTENEDOR
+    #* PARA GUARDAR CUALQUIER CAMBIO AL INSTANTE Y NO TENER QUE CREAR LA IMAGEN NUEVAMENTE
+    volumes:
+    - .:/app
+    #* MAPEAR EL PUERTO 8002 DE MI MAQUINA AL PUERTO 8000 DEL CONTENEDOR
+    ports:
+    - "8002:8002"
+    #* PASAR LA VARIABLE AL CONTENEDOR
+    restart: unless-stopped
+    env_file: .env

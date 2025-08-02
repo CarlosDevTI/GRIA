@@ -1,0 +1,17 @@
+asgiref==3.8.1
+cffi==1.17.1
+cryptography==44.0.3
+distlib==0.3.9
+Django==5.1.4
+et_xmlfile==2.0.0
+filelock==3.17.0
+mysql==0.0.3
+mysqlclient==2.2.7
+openpyxl==3.1.5
+oracledb==3.1.0
+platformdirs==4.3.6
+pycparser==2.22
+python-decouple==3.8
+sqlparse==0.5.3
+tzdata==2024.2
+virtualenv==20.29.1
