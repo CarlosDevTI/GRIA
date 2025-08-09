@@ -26,8 +26,11 @@ def obtener_datos_fondeo():
 
         # Formato para Oracle
         f_actual = fecha_corte_actual.strftime('%Y/%m/%d')
+        print("fecha_actual", f_actual)
         f_generacion = fecha_generacion.strftime('%Y/%m/%d')
+        print("fecha_generacion", f_generacion)
         f_anterior = fecha_corte_anterior.strftime('%Y/%m/%d')
+        print("fecha_anterior", f_anterior)
 
         # Conexión Oracle
         db = settings.DATABASES['oracle']

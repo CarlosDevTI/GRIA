@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'apps.gria',  # Agregar la aplicación gria'
     'apps.risk',  # Agregar la aplicación risk
     'apps.accounts',  # Agregar la aplicación accounts
+    'apps.apre', # Agregar la aplicacion apre
 ]
 
 MIDDLEWARE = [
