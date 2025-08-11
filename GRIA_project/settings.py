@@ -79,24 +79,38 @@ WSGI_APPLICATION = 'GRIA_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='192.168.15.41'),
-        'PORT': config('DB_PORT', default='3306'),
-    },
+# Database
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-    'oracle': {
-        'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'LINIX',
-        'USER': 'L2K',
-        'PASSWORD': 'L2K',
-        'HOST': '192.168.15.145',
-        'PORT': '1521',
-    },
+# Si la variable de entorno ENVIRONMENT se establece en 'production', usa MySQL.
+# De lo contrario, usa SQLite para el desarrollo local.
+if config('ENVIRONMENT', default='local') == 'production':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': config('DB_NAME'),
+            'USER': config('DB_USER'),
+            'PASSWORD': config('DB_PASSWORD'),
+            'HOST': config('DB_HOST', default='db'), # Se conecta al servicio 'db' de Docker Compose
+            'PORT': config('DB_PORT', default='3306'),
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+# Añadir la base de datos Oracle independientemente del entorno
+DATABASES['oracle'] = {
+    'ENGINE': 'django.db.backends.oracle',
+    'NAME': 'LINIX',
+    'USER': 'L2K',
+    'PASSWORD': 'L2K',
+    'HOST': '192.168.15.145',
+    'PORT': '1521',
 }
 
 

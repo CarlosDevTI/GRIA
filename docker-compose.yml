@@ -2,17 +2,30 @@ version: '3.8'
 
 services:
   web:
-  #* CONSTRUIR LA IMAGEN EN EL DIRECTORIO ACTUAL
     build: .
-    #* 0.0.0.0:8002 PARA QUE PUEDA SER ACCESIBLE
     command: python manage.py runserver 0.0.0.0:8002
-    #* 'volumes' SINCRONIZA LA CARPETA CON LA DEL CONTENEDOR
-    #* PARA GUARDAR CUALQUIER CAMBIO AL INSTANTE Y NO TENER QUE CREAR LA IMAGEN NUEVAMENTE
     volumes:
-    - .:/app
-    #* MAPEAR EL PUERTO 8002 DE MI MAQUINA AL PUERTO 8000 DEL CONTENEDOR
+      - .:/app
     ports:
-    - "8002:8002"
-    #* PASAR LA VARIABLE AL CONTENEDOR
-    restart: unless-stopped
+      - "8002:8002"
     env_file: .env
+    #* HACER QUE LA APP WEB ESPERE A QUE LA BASE DE DATOS ESTÉ LISTA
+    depends_on:
+      - db
+
+  db:
+    #* USAR LA IMAGEN OFICIAL DE MYSQL
+    image: mysql:8.0
+    #* CONFIGURAR LA BASE DE DATOS CON VARIABLES DE ENTORNO
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD} # Contraseña para el usuario root de MySQL
+    #* ASEGURAR QUE LOS DATOS PERSISTAN AUNQUE SE REINICIE EL CONTENEDOR
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+#* DEFINIR EL VOLUMEN PARA LA PERSISTENCIA DE DATOS
+volumes:
+  mysql_data:
