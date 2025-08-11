@@ -224,7 +224,7 @@
             width: 100%;
             height: 100%;
             background-color: rgba(13, 13, 13, 0.85);
-            display: flex; /* Cambiado de none a flex para que se vea al inicio */
+            display: none; /* Oculto por defecto */
             justify-content: center;
             align-items: center;
             z-index: 9999;
@@ -344,18 +344,46 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
-    <!-- SCRIPT GLOBAL PARA EL LOADER -->
+    <!-- SCRIPT GLOBAL PARA EL LOADER - VERSIÓN SIMPLE -->
     <script>
         const loader = document.getElementById('loader');
-
-        window.addEventListener("load", function(){
-            // Suaviza la salida
-            loader.style.opacity = '0';
-            loader.style.transition = 'opacity 0.6s ease';
-            setTimeout(() => {
+        
+        if (loader) {
+            // Función para ocultar el loader
+            function hideLoader() {
                 loader.style.display = 'none';
-            }, 600);
-        });
+            }
+            
+            // Manejar envío de formularios
+            document.body.addEventListener('submit', function(event) {
+                if (event.target.tagName === 'FORM') {
+                    const form = event.target;
+                    loader.style.display = 'flex';
+                    
+                    // Verificar si es una descarga de Excel
+                    const isExcelDownload = form.action.includes('download-excel') || 
+                                        form.querySelector('button[type="submit"]')?.textContent.includes('Excel');
+                    
+                    if (isExcelDownload) {
+                        // Para descargas de Excel, ocultar después de 3 segundos
+                        setTimeout(hideLoader, 5000);
+                    } else {
+                        // Para otros formularios, ocultar después de 15 segundos como fallback
+                        setTimeout(hideLoader, 15000);
+                    }
+                }
+            });
+            
+            // Ocultar loader en otros eventos
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted) {
+                    hideLoader();
+                }
+            });
+            
+            window.addEventListener('load', hideLoader);
+            window.addEventListener('error', hideLoader);
+        }
     </script>
 </body>
 </html>

@@ -25,6 +25,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
 # ALLOWED_HOSTS = ['192.168.15.215']
 

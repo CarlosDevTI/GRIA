@@ -131,214 +131,52 @@
         <span>Resultados del Reporte</span>
         <div>
             <button id="btn-generate-summary" class="btn btn-sm btn-info"><i class="fas fa-brain"></i> Resumen IA</button>
-            <a href="{% url 'apre:download_excel' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-success" target="_blank"><i class="fas fa-file-excel"></i> Excel</a>
+            <form action="{% url 'download_excel' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="tipo_apre" value="{{ selected_apre_type }}">
+                <input type="hidden" name="periodicidad" value="{{ form.cleaned_data.periodicidad|default:form.periodicidad.value }}">
+                {% if form.cleaned_data.fecha %}
+                    <input type="hidden" name="fecha" value="{{ form.cleaned_data.fecha|date:'Y-m-d' }}">
+                {% elif form.fecha.value %}
+                    <input type="hidden" name="fecha" value="{{ form.fecha.value|date:'Y-m-d' }}">
+                {% endif %}
+                <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-file-excel"></i> Excel</button>
+            </form>   
         </div>
     </div>
     <div class="card-body p-0">
         <div class="table-container">
             <div class="table-wrapper">
                 <table class="apre-table">
-                    {% if selected_apre_type == 'apre_compensados' or selected_apre_type == 'apre_sincompensados' %}
+                    {% if apre_list and apre_list.0 %}
                     <thead>
                         <tr>
-                            <th>Sucursal</th>
-                            <th>% Provis / Interes mes ant</th>
-                            <th>% Provis / Interes corte</th>
-                            <th>PyG Final CON compensados</th>
-                            <th>Compensados Neto</th>
-                            <th>Compensados gastos</th>
-                            <th>Compensados ingresos</th>
-                            <th>Compensados financieros</th>
-                            <th>Total PyG contable</th>
-                            <th>Total gastos y costos</th>
-                            <th>Otras gastos y costos</th>
-                            <th>Gasto provisión</th>
-                            <th>Total ingresos</th>
-                            <th>Ingresos por préstamos</th>
-                            <th>Otros ingresos</th>
-                            <th>Costo Depósitos</th>
-                            <th>Gasto Operativo + impuestos</th>
-                            <th>Depósitos</th>
-                            <th>Depósitos año corrido</th>
-                            <th>Aportes</th>
-                            <th>Aportes año corrido</th>
-                            <th>Cartera</th>
-                            <th>Cartera año corrido</th>
-                            <th>Asociados</th>
-                            <th>Asociados año corrido</th>
-                            <th>Cartera vencida</th>
-                            <th>Cartera vencida año corrido</th>
-                            <th>Cartera improductiva año corrido</th>
-                            <th>% Tasa Vencida</th>
-                            <th>% Tasa Improductiva</th>
-                            <th>% Tasa Marginal</th>
-                            <th>% Tasa Cartera</th>
-                            <th>% Tasa Depósitos</th>
+                        {% for key, value in apre_list.0.items %}
+                            <th>{{ key }}</th>
+                        {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for registro in apre_list %}
-                        <tr {% if registro.SUCURSAL == 'TOTAL' %}class="total-row"{% endif %}>
-                            <td style="text-align: left; font-weight: 500;">{{ registro.SUCURSAL }}</td>
-                            <td class="numeric">{{ registro.PROVINTMESANT|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.PROVINTMES|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.PYG_CORTE|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.COMPENNETO|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.COMPENGASTOS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.COMPENINGRESOS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.COMPENFINANCIEROS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.TOTALPYG|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.TOTALGASYCOS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.OTROSGASYCOS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.GASTOPROV|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.TOTALING|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.INGREPRESTAMOS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.OTROSINGRE|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.COSTODEPO|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.GASOPEIMPU|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.DEPOSITOS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.DEPOANOCOR|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.APORTES|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.APORANOCOR|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CARTERA|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CARANOCOR|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.ASOCIADOS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.ASOANOCOR|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CARTERAVENCIDA|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CARVENANOCOR|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CARIMPROANCOR|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.TASAVENCID|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.TASAIMPROD|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.TASAMARG|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.TASACART|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.TASADEPO|floatformat:2 }}%</td>
+                        <tr {% if registro.Sucursal == 'TOTAL' %}class="total-row"{% endif %}>
+                            {% for key, value in registro.items %}
+                                <td 
+                                    {% if key == 'Sucursal' %}style="text-align: left; font-weight: 500;"
+                                    {% else %}class="numeric"
+                                    {% endif %}>
+                                    
+                                    {% if '%' in key %}
+                                        {{ value|floatformat:2 }}%
+                                    {% elif 'Compensado' in key or 'P y G' in key or 'Total' in key or 'Gasto' in key or 'Ingresos' in key or 'Costo' in key or 'Depósitos' in key or 'Aportes' in key or 'Cartera' in key or 'Asociados' in key or 'Excedentes' in key %}
+                                        {{ value|floatformat:0 }}
+                                    {% else %}
+                                        {{ value }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
                         </tr>
                         {% endfor %}
                     </tbody>
-                    {% elif selected_apre_type == 'apre_basico' %}
-                    <thead>
-                        <tr>
-                            <th>% Provis / Interes mes ant</th>
-                            <th>% Provis / Interes corte</th>
-                            <th>Sucursal</th>
-                            <th>Saldo Carte Cort25</th>
-                            <th>Cartera Variacion solo Corte</th>
-                            <th>Cartera Variacion Cort25 a Dic24</th>
-                            <th>Calidad Cartera 25%</th>
-                            <th>Calidad C variacion solo corte/th>
-                            <th>Calidad variacion corte25 a Dic24</th>
-                            <th>Improductivo Cartera Corte25%</th>
-                            <th>Improductivo Cartera Variacion solo corte</th>
-                            <th>Calidad variacion corte25 a Dic24</th>
-                            <th>Saldo Aportes Corte25</th>
-                            <th>Aporte variacion solo corte</th>
-                            <th>Aporte Variacion corte25 a Dic24</th>
-                            <th>Saldo Deposito Corte25</th>
-                            <th>Depósito Variacion solo Corte</th>
-                            <th>Depósito Variacion corte25 a Dic24</th>
-                            <th>Asociado a Corte25</th>
-                            <th>Asociado Variacion solo Corte</th>
-                            <th>Asociado Variacion corte25 a Dic24</th>
-                            <th>Margen Tasas Corte%</th>
-                            <th>Variacion Margen Tasa corte25 a Dic24</th>
-                            <th>Variacion Margen Tasas solo mes %</th>
-                            <th>TasaPro Depósito Cort%</th>
-                            <th>Variacion Tasa Depósitos solo Mes</th>
-                            <th>Variacion Tasa Depósito corte25 a Dic24</th>
-                            <th>TasaPro Cartera Cort%</th>
-                            <th>Variacion Tasa Cartera solo Mes</th>
-                            <th>Variacion Tasa Cartera corte25 a Dic24</th>
-                            <th>Excedente final al corte</th>
-                            <th>PyG Solo Mes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for registro in apre_list %}
-                        <tr {% if registro.SUCURSAL == 'TOTAL' %}class="total-row"{% endif %}>
-                            <td class="numeric">{{ registro.PROVINTMESANT|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.PROVINTMES|floatformat:2 }}%</td>
-                            <td style="text-align: left; font-weight: 500;">{{ registro.SUCURSAL }}</td>
-                            <td class="numeric">{{ registro.CARTERA|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CARVARMES|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CARANOCOR|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CALIDAD|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CALVARMES|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CARANOMES|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CARTERAIMPRO|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CARIMPROMES|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.CARIMPROANCOR|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.APORTES|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.APORVARMES|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.APORANOCOR|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.DEPOSITOS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.DEPOVARMES|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.DEPOANOCOR|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.ASOCIADOS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.ASOVARMES|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.ASOANOCOR|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.TASAMARG|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.MARGANO|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.MARGVARMES|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.TASADEPO|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.TASADEPOMES|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.TASADEPOANO|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.TASACART|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.TASACARTMES|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.TASACARTANO|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.EXCEDENTES|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.PYG_CORTE|floatformat:0 }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    {% elif selected_apre_type == 'apre_diferencia' %}
-                    <thead>
-                        <tr>
-                            <th>% Provis / Interes mes ant</th>
-                            <th>CORTE ANTERIOR</th>
-                            <th>Ingresos intCte solo Corte25 Ant.</th>
-                            <th>Otros ingresos Anterior.</th>
-                            <th>Gastos prov solo Corte25 Ant.</th>
-                            <th>Otros Gastos + Costos Corte24</th>
-                            <th>Excedentes antes Comp. Ant.</th>
-                            <th>Comp Ing. Ant.</th>
-                            <th>Excedente Ant Final</th>
-                            <th>CORTE</th>
-                            <th>Ingresos intCte solo Corte25</th>
-                            <th>Otros Ingresos</th>
-                            <th>Gastos prov solo Corte25</th>
-                            <th>Otros Gastos + Costos Corte24</th>
-                            <th>Excedentes Antes Comp.</th>
-                            <th>Compensado Ingresos</th>
-                            <th>Compensado Gastos</th>
-                            <th>Excedente Final</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for registro in apre_list %}
-                        <tr {% if registro.SUCURSAL == 'TOTAL' %}class="total-row"{% endif %}>
-                            <td class="numeric">{{ registro.PROVINTMESANT|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.INGREPRESTAMOSANT|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.OTROSINGREANT|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.GASTOPROVANT|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.OTROSGASYCOSANT|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.EXCEDENTESANTESCOMANT|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.COMPENINGANT|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.COMPENGASANT|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.EXCEDENTEFINALANT|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.PROVINTMES|floatformat:2 }}%</td>
-                            <td class="numeric">{{ registro.INGREPRESTAMOS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.OTROSINGRE|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.GASTOPROV|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.OTROSGASYCOS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.EXCEDENTESANTESCOM|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.COMPENING|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.COMPENGAS|floatformat:0 }}</td>
-                            <td class="numeric">{{ registro.EXCEDENTEFINAL|floatformat:0 }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    {% else %}
-                    <!-- Mensaje o tabla por defecto si no hay tipo seleccionado o datos -->
                     {% endif %}
                 </table>
             </div>
@@ -355,25 +193,24 @@
 
 <!-- Modal para Resumen IA -->
 <div class="modal fade" id="aiSummaryModal" tabindex="-1" aria-labelledby="aiSummaryModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="aiSummaryModalLabel"><i class="fas fa-brain me-2"></i> Resumen Técnico con IA</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body" id="aiSummaryContent">
-        <div class="text-center">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Generando resumen...</span>
-          </div>
-          <p class="mt-2">Generando concepto técnico, por favor espere...</p>
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="aiSummaryModalLabel"><i class="fas fa-brain me-2"></i> Resumen Técnico con IA</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-      }
+        <div class="modal-body" id="aiSummaryContent">
+            <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Generando resumen...</span>
+            </div>
+            <p class="mt-2">Generando concepto técnico, por favor espere...</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 
@@ -401,6 +238,53 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Set initial state on page load
     toggleFechaInput();
+
+    const summaryButton = document.getElementById('btn-generate-summary');
+    const summaryModal = new bootstrap.Modal(document.getElementById('aiSummaryModal'));
+    const summaryContent = document.getElementById('aiSummaryContent');
+
+    if (summaryButton) {
+        summaryButton.addEventListener('click', function() {
+            const reportDataElement = document.getElementById('report-data');
+            if (!reportDataElement) {
+                summaryContent.innerHTML = '<p class="text-danger">Error: No se encontraron datos para generar el resumen.</p>';
+                summaryModal.show();
+                return;
+            }
+
+            const reportData = JSON.parse(reportDataElement.textContent);
+
+            // Show spinner while waiting
+            summaryContent.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Generando resumen...</span>
+                    </div>
+                    <p class="mt-2">Generando concepto técnico, por favor espere...</p>
+                </div>`;
+            summaryModal.show();
+
+            fetch("{% url 'generate_summary' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ data: reportData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    summaryContent.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
+                } else {
+                    summaryContent.innerHTML = data.summary;
+                }
+            })
+            .catch(error => {
+                summaryContent.innerHTML = `<p class="text-danger">Error al contactar al servidor: ${error}</p>`;
+            });
+        });
+    }
 });
 </script>
 {% endblock %}

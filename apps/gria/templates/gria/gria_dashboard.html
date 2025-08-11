@@ -158,6 +158,20 @@
     </div>
     {% endif %}
 
+    <!-- VISTA PARA EL APRE -->
+    {% if user|has_group:"Financiera" or user.is_superuser %}
+    <div class="kpi-card" onclick="window.location.href='{% url 'apre_home' %}'">
+        <div class="kpi-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <h3 class="kpi-title">APRE</h3>
+        <p class="kpi-description">
+            Control y análisis financiero para optimizar la gestión de recursos.
+        </p>
+        <span class="kpi-button">Ir al Dashboard</span>
+    </div>
+    {% endif %}
+
     <!-- Riesgos -->
     {% if user|has_group:"Riesgos" or user.is_superuser %}
     <div class="kpi-card" onclick="window.location.href='{% url 'dashboard_sarc' %}'">

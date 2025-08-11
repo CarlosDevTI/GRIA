@@ -27,3 +27,6 @@ Thumbs.db
 #* DIRECTORIO DE ARCHIVOS ESTÁTICOS QUE CREA DJANGO
 /static_collected/
 /staticfiles/
+
+#* BASE DE DATOS SQLITE
+db.sqlite3
