@@ -317,6 +317,7 @@ def apre_report_view(request):
             elif selected_apre_type == 'apre_diferencia':
                 datos = obtener_datos_apre_vs(request, form)
 
+            # print("Obtener solo los codigos de sucursal",datos.CODSUCURSAL.unique())
             # Renombrar datos para la vista
             rename_map = _get_rename_map(selected_apre_type)
             datos = _rename_data(datos, rename_map)

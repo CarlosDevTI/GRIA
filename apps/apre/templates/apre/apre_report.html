@@ -1,60 +1,22 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 
 {% block extra_css %}
 <style>
     /* ==== Encabezado Integrado y Compacto ==== */
-    .compact-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem; /* Espacio antes de la tabla */
-    }
-    .compact-header .dashboard-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin: 0;
-        text-align: left; /* Título a la izquierda */
-    }
-    .header-filters .form-inline {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    .header-filters .form-inline label {
-        margin-bottom: 0;
-        font-weight: 500;
-        font-size: 0.8rem;
-        white-space: nowrap; /* Evita que la etiqueta se rompa */
-    }
+    .compact-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; /* Espacio antes de la tabla */}
+    .compact-header .dashboard-title { font-size: 1.25rem; font-weight: 600; margin: 0; text-align: left; /* Título a la izquierda */}
+    .header-filters .form-inline { display: flex; align-items: center; gap: 0.75rem;}
+    .header-filters .form-inline label { margin-bottom: 0; font-weight: 500; font-size: 0.8rem; white-space: nowrap; /* Evita que la etiqueta se rompa */}
     .header-filters .form-inline .form-control,
-    .header-filters .form-inline .form-select {
-        padding: 0.3rem 0.6rem;
-        font-size: 0.8rem;
-        height: auto;
-        display: inline-block; /* Asegura que select/input sean inline */
-        width: auto; /* Permite que el ancho se ajuste al contenido */
-    }
+    .header-filters .form-inline .form-select { padding: 0.3rem 0.6rem; font-size: 0.8rem; height: auto; display: inline-block; /* Asegura que select/input sean inline */ width: auto; /* Permite que el ancho se ajuste al contenido */}
+    
     /* Estilos para los grupos de radio/checkbox si se renderizan como lista */
-    .header-filters .form-inline ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex; /* Hace que la lista sea un contenedor flex */
-        gap: 0.5rem; /* Espacio entre opciones de radio/checkbox */
-        align-items: center;
-    }
-    .header-filters .form-inline ul li {
-        margin: 0;
-        display: flex; /* Hace que cada opción sea un contenedor flex */
-        align-items: center;
-        gap: 0.2rem; /* Espacio entre el input y su label */
-    }
+    .header-filters .form-inline ul { list-style: none; padding: 0; margin: 0; display: flex; /* Hace que la lista sea un contenedor flex */ gap: 0.5rem; /* Espacio entre opciones de radio/checkbox */ align-items: center;}
+    .header-filters .form-inline ul li {margin: 0;display: flex; /* Hace que cada opción sea un contenedor flex */align-items: center;gap: 0.2rem; /* Espacio entre el input y su label */}
+
     /* Asegura que los grupos de formulario sean inline-flex para alineación */
-    .header-filters .form-inline .form-group-inline {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
+    .header-filters .form-inline .form-group-inline { display: inline-flex; align-items: center; gap: 0.5rem;}
 
     /* ==== Botones ==== */
     .btn { border: none; border-radius: 4px; font-weight: 500; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; }
@@ -66,21 +28,53 @@
     .btn-info:hover { background: #0aa8c7; }
 
     /* ==== Tabla ==== */
-    .table-container { background: white; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); }
-    .table-wrapper { overflow-x: auto; max-height: 75vh; overflow-y: auto; }
-    .apre-table { width: 100%; min-width: 2800px; border-collapse: collapse; font-size: 0.8rem; }
-    .apre-table th { background: var(--primary-color); color: white; font-weight: 600; padding: 0.6rem 0.5rem; text-align: center; white-space: normal; font-size: 0.75rem; vertical-align: middle; max-width: 150px; }
-    .apre-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border-color); text-align: center; white-space: nowrap; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-    .apre-table thead th { position: sticky; top: 0; z-index: 2; }
-    .apre-table tbody tr:hover { background-color: rgba(52, 152, 219, 0.05); }
-    .numeric { text-align: right !important; font-family: 'Consolas', 'Menlo', 'Courier New', monospace; font-size: 0.85rem; padding-right: 0.6rem !important; }
-    .total-row { background-color: #e9f5ff !important; font-weight: bold; border-top: 2px solid var(--primary-color); }
+    .table-container { background: white; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color);}
+    .table-wrapper { overflow-x: auto; max-height: 70vh; overflow-y: auto;}
+    .apre-table { width: 100%; min-width: 2800px; border-collapse: collapse; font-size: 0.78rem;}
+    .apre-table th { background: var(--primary-color); color: white; font-weight: 600; padding: 0.4rem; text-align: center; white-space: normal; font-size: 0.75rem; max-width: 120px; word-wrap: break-word; line-height: 1.2; }
+    .apre-table td { padding: 0.3rem 0.3rem; border-bottom: 1px solid var(--border-color); text-align: center; white-space: nowrap;}
+    .apre-table thead th { position: sticky; top: 0; z-index: 2;}
+    .apre-table tbody tr:hover {background-color: rgba(52, 152, 219, 0.05);}
 
+    /* ==== Filas separadoras/agrupadores ==== */
+    .group-separator-row {border-top: 2px solid #1a252f !important;}
+    .group-separator-row td {padding: 0.25rem !important;}
+    .group-separator-cell {position: relative;}
+    .group-separator-cell::before { margin-right: 0.5rem; font-size: 0.9rem;}
+    
+    /* Efecto de separación visual */
+    .group-separator-row + tr {border-top: 1px solid #ddd;}
+    .numeric { text-align: right !important; font-weight: 600; font-size: 0.8rem; padding-right: 0.4rem !important; }
+    .numeric.positive {color: #27ae60;}
+    .numeric.negative {color: #e74c3c;}
+    .total-row { background-color: #daf0ff !important; font-weight: 600;}
+    
+    /* ==== Resumen ==== */
+    .stats-summary { background: #f8f9fa; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.6rem; text-align: center;}
+    .record-count { font-size: 0.8rem; color: #6c757d; margin: 0;}
+    
     /* ==== Scroll visible ==== */
-    .table-wrapper::-webkit-scrollbar { height: 8px; }
-    .table-wrapper::-webkit-scrollbar-track { background: #f1f1f1; }
-    .table-wrapper::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
-    .table-wrapper::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+    .table-wrapper::-webkit-scrollbar {height: 6px;}
+    .table-wrapper::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px;}
+    .table-wrapper::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px;}
+    .table-wrapper::-webkit-scrollbar-thumb:hover {background: #a8a8a8;}
+
+    /* ==== Responsivo ==== */
+    @media (max-width: 768px) {
+        .dashboard-header { padding: 0.6rem; margin: -1rem -1rem 1rem -1rem;}
+        .dashboard-title { font-size: 1rem;}
+        .form-container {padding: 0.4rem;}
+        .btn-group {flex-direction: column;}
+        .btn {justify-content: center;}
+        .apre-table {font-size: 0.7rem;}
+        .apre-table th,
+        .apre-table td {padding: 0.3rem;}
+        .group-separator-row td {padding: 0.5rem 0.4rem !important; font-size: 0.8rem !important;}
+    }
+    .instructions-card { background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 1rem; text-align: center;}
+    .instructions-icon { color: #856404; font-size: 2rem; margin-bottom: 0.5rem;}
+    .instructions-title { color: #856404; margin-bottom: 0.5rem;}
+    .instructions-text { color: #856404; margin: 0;}
 </style>
 {% endblock %}
 
@@ -126,7 +120,7 @@
 
 {% if data != 'null' and apre_list %}
 {{ data|json_script:"report-data" }}
-<div class="card mt-4">
+<div class="mt-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span>Resultados del Reporte</span>
         <div>
@@ -145,44 +139,67 @@
         </div>
     </div>
     <div class="card-body p-0">
-        <div class="table-container">
-            <div class="table-wrapper">
-                <table class="apre-table">
-                    {% if apre_list and apre_list.0 %}
-                    <thead>
-                        <tr>
-                        {% for key, value in apre_list.0.items %}
+    <div class="table-container">
+        <div class="table-wrapper">
+            <table class="apre-table">
+                {% if apre_list and apre_list.0 %}
+                <thead>
+                    <tr>
+                    {% for key, value in apre_list.0.items %}
+                        {% if key != "CODSUCURSAL" %}   {# NO PASARLE EL CODIGO DE SUCURSAL A LA TABLA #}
                             <th>{{ key }}</th>
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in apre_list %}
+                    <!-- Fila de datos normal -->
+                    <tr {% if registro.CODSUCURSAL == "No" %}class="total-row"{% endif %}>
+                        {% for key, value in registro.items %}
+                            {% if key != "CODSUCURSAL" %}
+                            <td 
+                                {% if key == 'Sucursal' %}
+                                    style="text-align: left; font-weight: 500;"
+                                {% else %}
+                                    class="numeric {% if value|to_numeric > 0 %}positive{% elif value|to_numeric < 0 %}negative{% endif %}"
+                                {% endif %}>
+                                
+                                {% if '%' in key %}
+                                    {{ value|floatformat:2 }}%
+                                {% elif 'Compensado' in key or 'P y G' in key or 'Total' in key or 'Gasto' in key or 'Ingresos' in key or 'Costo' in key or 'Depósitos' in key or 'Aportes' in key or 'Cartera' in key or 'Asociados' in key or 'Excedentes' in key %}
+                                    {{ value|floatformat:0|default:"0" }}
+                                {% else %}
+                                    {{ value|default:"-" }}
+                                {% endif %}
+                            </td>
+                            {% endif %}
                         {% endfor %}
+                    </tr>
+                    
+                    <!-- Separador después de filas con CODSUCURSAL = "No" -->
+                    {% if registro.CODSUCURSAL == "No" %}
+                        <tr class="group-separator-row">
+                            <td colspan="{{ apre_list.0.items|length|add:"-1" }}" class="group-separator-cell">
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {% for registro in apre_list %}
-                        <tr {% if registro.Sucursal == 'TOTAL' %}class="total-row"{% endif %}>
-                            {% for key, value in registro.items %}
-                                <td 
-                                    {% if key == 'Sucursal' %}style="text-align: left; font-weight: 500;"
-                                    {% else %}class="numeric"
-                                    {% endif %}>
-                                    
-                                    {% if '%' in key %}
-                                        {{ value|floatformat:2 }}%
-                                    {% elif 'Compensado' in key or 'P y G' in key or 'Total' in key or 'Gasto' in key or 'Ingresos' in key or 'Costo' in key or 'Depósitos' in key or 'Aportes' in key or 'Cartera' in key or 'Asociados' in key or 'Excedentes' in key %}
-                                        {{ value|floatformat:0 }}
-                                    {% else %}
-                                        {{ value }}
-                                    {% endif %}
-                                </td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
                     {% endif %}
-                </table>
-            </div>
+                    {% endfor %}
+                </tbody>
+                {% endif %}
+            </table>
         </div>
     </div>
+    
+    <!-- Stats Summary -->
+    <div class="stats-summary">
+        <p class="record-count">
+            <i class="bi bi-database me-2"></i>
+            Total de registros: <strong>{{ apre_list|length }}</strong>
+        </p>
+    </div>
 </div>
+
 {% elif request.method == 'POST' %}
 <div class="instructions-card mt-4">
     <div class="instructions-icon"><i class="bi bi-info-circle-fill"></i></div>
