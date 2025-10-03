@@ -25,6 +25,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
+
 GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
 # ALLOWED_HOSTS = ['192.168.15.215']
@@ -39,11 +40,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.fondeos',  # Agregar la aplicación fondeos
-    'apps.gria',  # Agregar la aplicación gria'
-    'apps.risk',  # Agregar la aplicación risk
+    'apps.comercial',  # Agregar la aplicación comercial
+    'apps.dashboardgria',  # Agregar la aplicación dashboard_gria'
+    'apps.riesgos',  # Agregar la aplicación riesgos
     'apps.accounts',  # Agregar la aplicación accounts
-    'apps.apre', # Agregar la aplicacion apre
+    'apps.financiera', # Agregar la aplicacion financiera
+    'apps.cumplimiento', # Agregar la aplicacion cumplimiento
 ]
 
 MIDDLEWARE = [
@@ -149,6 +151,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 import os
+
+#! INTEGRACION CHATGPT
+OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]

@@ -1,0 +1,540 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Informe de Aportes - KPI A&G{% endblock %}
+
+{% block extra_css %}
+<style>
+    .table-wrapper {
+        overflow-x: auto;
+    }
+    
+    .aportes-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+    }
+    
+    /* Encabezado de la Tabla */
+    .aportes-table th {
+        background: #ffc107;
+        color: #000;
+        font-weight: 600;
+        padding: 0.5rem;
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        border: 1px solid #e0a800;
+    }
+    
+    .aportes-table td {
+        padding: 0.4rem 0.5rem;
+        border-bottom: 1px solid #e9ecef;
+        white-space: nowrap;
+    }
+    
+    .aportes-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Estilos de Fila Específicos */
+    .row-bold td {
+        font-weight: bold;
+    }
+    
+    .row-yellow-shaded {
+        background-color: #fff9e6;
+    }
+    
+    .row-grey-shaded {
+        background-color: #e9ecef;
+    }
+
+    /* Divisor de Sección */
+    .section-divider {
+        border-bottom: 2px solid #000;
+    }
+
+    /* Estilos de columnas y celdas */
+    .tipo-aporte-col {
+        text-align: left !important;
+        padding-left: 15px !important;
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        background-color: white;
+    }
+
+    .aportes-table th.tipo-aporte-col {
+        background-color: #ffc107;
+        z-index: 3;
+    }
+    
+    .row-yellow-shaded .tipo-aporte-col {
+        background-color: #fff9e6;
+    }
+
+    .row-grey-shaded .tipo-aporte-col {
+        background-color: #e9ecef;
+    }
+
+    .aportes-table tbody tr:hover .tipo-aporte-col {
+        background-color: #f8f9fa;
+    }
+    
+    .millones {
+        font-weight: 500;
+    }
+    
+    .porcentaje {
+        color: #566573;
+        font-size: 0.75rem;
+    }
+    
+    .dashboard-header {
+        display: flex;
+        padding: 0rem 1rem;
+        margin: -1rem -1rem 1rem -1rem;
+        border-radius: 6px;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .title-section {
+        text-align: left;
+    }
+
+    .dashboard-title {
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin-bottom: 0.1rem;
+    }
+
+    .dashboard-subtitle {
+        font-size: 0.9rem;
+        opacity: 0.85;
+        margin: 0;
+    }
+
+    .actions-section .btn-group {
+        margin-bottom: 0;
+    }
+
+    /* Botones */
+    .btn-group {
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.35rem 0.7rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 0.8rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: var(--secondary-color, #0d6efd);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #0a58ca;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #218838;
+    }
+
+    .btn-info {
+        background: #0dcaf0;
+        color: white;
+    }
+
+    .btn-info:hover {
+        background: #0aa8c2;
+    }
+    
+    .btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+    
+    /* Loading spinner */
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-content">
+        <div class="title-section">
+            <h1 class="dashboard-title">
+                <i class="bi bi-cash-stack me-2"></i>Informe de Aportes
+            </h1>
+            <p class="dashboard-subtitle">
+                Fecha de generación: {{ fecha_generacion|date:"d/m/Y H:i" }}
+            </p>
+        </div>
+        <div class="actions-section">
+            <form method="post" style="display: inline;">
+                {% csrf_token %}
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i>
+                        Consultar Datos Consolidado Recaudos
+                    </button>
+                    <!-- Botón para generar el recaudo de aportes detallado por cédulas -->
+                    <button type="submit" formaction="{% url 'generar_recaudo_aportes_detalle' %}" class="btn btn-primary">
+                        <i class="bi bi-search"></i>
+                        Consultar Datos Detalle por Cédula
+                    </button>
+                    <!-- Botón para exportar a Excel -->
+                    <button type="button" class="btn btn-success" onclick="exportarExcel()" 
+                            {% if not aportes_data %}disabled{% endif %}>
+                        <i class="bi bi-file-earmark-excel"></i>
+                        Exportar a Excel
+                    </button>
+                    <button type="button" class="btn btn-info" id="btn-resumen-ia" onclick="generarResumenIA()" {% if not aportes_data %}disabled{% endif %}>
+                        <i class="bi bi-robot"></i>
+                        Resumen IA
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if error %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
+</div>
+{% endif %}
+
+{% if aportes_data %}
+<div class="table-wrapper">
+    <table class="aportes-table">
+        <thead>
+            <tr>
+                <th rowspan="2" class="tipo-aporte-col">TIPO APORTE</th>
+                {% for mes in meses_data %}
+                <th colspan="4">{{ mes.nombre|upper }}</th>
+                {% endfor %}
+            </tr>
+            <tr>
+                {% for mes in meses_data %}
+                <th>APORTANTES</th>
+                <th>%</th>
+                <th>MILLONES</th>
+                <th>%</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <!-- JURIDICO -->
+            <tr class="row-bold">
+                <td class="tipo-aporte-col">JURIDICO</td>
+                {% for mes in juridico_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td class="porcentaje">
+                    {% if mes.porcentaje_aportantes %}{{ mes.porcentaje_aportantes|floatformat:0 }}%{% endif %}
+                </td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td class="porcentaje">
+                    {% if mes.porcentaje_millones %}{{ mes.porcentaje_millones|floatformat:0 }}%{% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td class="tipo-aporte-col" style="padding-left: 25px;">BARRIDO</td>
+                {% for mes in juridico_barrido_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_aportantes|floatformat:0 }}%</td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_millones|floatformat:0 }}%</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td class="tipo-aporte-col" style="padding-left: 25px;">VOLUNTARIO</td>
+                {% for mes in juridico_voluntario_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_aportantes|floatformat:0 }}%</td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_millones|floatformat:0 }}%</td>
+                {% endfor %}
+            </tr>
+            <tr class="row-yellow-shaded">
+                <td class="tipo-aporte-col" style="padding-left: 25px;">NINGUNO</td>
+                {% for mes in juridico_ninguno_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td></td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td></td>
+                {% endfor %}
+            </tr>
+            <tr class="row-yellow-shaded section-divider row-bold">
+                <td class="tipo-aporte-col">Aportantes</td>
+                {% for mes in juridico_subtotal_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_aportantes|floatformat:0 }}%</td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td></td>
+                {% endfor %}
+            </tr>
+
+            <!-- MAYORES -->
+            <tr class="row-bold">
+                <td class="tipo-aporte-col">MAYORES</td>
+                {% for mes in mayores_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td></td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td class="tipo-aporte-col" style="padding-left: 25px;">BARRIDO</td>
+                {% for mes in mayores_barrido_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_aportantes|floatformat:0 }}%</td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_millones|floatformat:0 }}%</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td class="tipo-aporte-col" style="padding-left: 25px;">VOLUNTARIO</td>
+                {% for mes in mayores_voluntario_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_aportantes|floatformat:0 }}%</td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_millones|floatformat:0 }}%</td>
+                {% endfor %}
+            </tr>
+            <tr class="row-yellow-shaded">
+                <td class="tipo-aporte-col" style="padding-left: 25px;">NINGUNO</td>
+                {% for mes in mayores_ninguno_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td></td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td></td>
+                {% endfor %}
+            </tr>
+            <tr class="row-yellow-shaded section-divider row-bold">
+                <td class="tipo-aporte-col">Aportantes</td>
+                {% for mes in mayores_subtotal_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_aportantes|floatformat:0 }}%</td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td></td>
+                {% endfor %}
+            </tr>
+
+            <!-- MENORES -->
+            <tr class="row-bold">
+                <td class="tipo-aporte-col">MENORES</td>
+                {% for mes in menores_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td></td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td class="tipo-aporte-col" style="padding-left: 25px;">BARRIDO</td>
+                {% for mes in menores_barrido_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_aportantes|floatformat:0 }}%</td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_millones|floatformat:0 }}%</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td class="tipo-aporte-col" style="padding-left: 25px;">VOLUNTARIO</td>
+                {% for mes in menores_voluntario_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_aportantes|floatformat:0 }}%</td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_millones|floatformat:0 }}%</td>
+                {% endfor %}
+            </tr>
+            <tr class="row-yellow-shaded">
+                <td class="tipo-aporte-col" style="padding-left: 25px;">NINGUNO</td>
+                {% for mes in menores_ninguno_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td></td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td></td>
+                {% endfor %}
+            </tr>
+            <tr class="row-yellow-shaded section-divider row-bold">
+                <td class="tipo-aporte-col">Aportantes</td>
+                {% for mes in menores_subtotal_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td class="porcentaje">{{ mes.porcentaje_aportantes|floatformat:0 }}%</td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td></td>
+                {% endfor %}
+            </tr>
+
+            <!-- TOTAL FINAL -->
+            <tr class="row-grey-shaded row-bold">
+                <td class="tipo-aporte-col">ASOCIADOS ACTIVOS</td>
+                {% for mes in total_data %}
+                <td>{{ mes.aportantes|floatformat:0 }}</td>
+                <td></td>
+                <td class="millones">${{ mes.millones|floatformat:2 }}</td>
+                <td></td>
+                {% endfor %}
+            </tr>
+            <tr class="row-grey-shaded row-bold">
+                <td class="tipo-aporte-col">VARIACIÓN</td>
+                {% for mes_data in variaciones_data %}
+                <td colspan="4" class="millones">${{ mes_data.millones|floatformat:2 }}</td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+{% else %}
+<!-- Instructions Card -->
+<div class="instructions-card">
+    <div class="instructions-icon">
+        <i class="bi bi-info-circle-fill"></i>
+    </div>
+    <h4 class="instructions-title">Bienvenido al Dashboard de Aportes</h4>
+    <p class="instructions-text">
+        Para comenzar, haz clic en el botón <strong>"Consultar Datos"</strong>.
+        <br>
+        Una vez que los datos se hayan cargado, se habilitará la opción para <strong>"Exportar a Excel"</strong>.
+    </p>
+</div>
+{% endif %}
+
+<!-- Modal para Resumen IA -->
+<div class="modal fade" id="iaSummaryModal" tabindex="-1" aria-labelledby="iaSummaryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="iaSummaryModalLabel">Resumen de IA</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="iaSummaryContent">
+                <!-- El resumen de IA se cargará aquí -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportarExcel() {
+    const btn = event.target.closest('button');
+    if (btn.disabled) {
+        alert('No hay datos disponibles para exportar.');
+        return;
+    }
+    
+    const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfTokenElement) {
+        console.error('CSRF token not found');
+        alert('Error: Token de seguridad no encontrado.');
+        return;
+    }
+    
+    const originalContent = btn.innerHTML;    
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Exportando...';
+    btn.disabled = true;
+    
+    try {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "exportar_aportes_excel" %}';
+
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfTokenElement.value;
+        form.appendChild(csrfInput);
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        
+    } catch (error) {
+        console.error('Error al exportar:', error);
+        alert('Error al exportar el archivo. Por favor, intenta nuevamente.');
+    } finally {
+        setTimeout(() => {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        }, 2000);
+    }
+}
+
+function generarResumenIA() {
+    const btn = document.getElementById('btn-resumen-ia');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const aportesData = JSON.parse('{{ aportes_data_json|safe }}');
+    const summaryModal = new bootstrap.Modal(document.getElementById('iaSummaryModal'));
+    const summaryContent = document.getElementById('iaSummaryContent');
+
+    if (btn.disabled) {
+        return;
+    }
+
+    summaryContent.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Generando resumen...</span>
+            </div>
+            <p class="mt-2">Generando concepto técnico, por favor espere...</p>
+        </div>`;
+    summaryModal.show();
+
+    fetch("{% url 'generar_resumen_aportes_ai' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ data: aportesData })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            summaryContent.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
+        } else {
+            summaryContent.innerHTML = data.summary;
+        }
+    })
+    .catch(error => {
+        summaryContent.innerHTML = `<p class="text-danger">Error al contactar al servidor: ${error}</p>`;
+    });
+}
+</script>
+{% endblock %}

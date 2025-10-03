@@ -1,0 +1,49 @@
+<div class="kpi-card">
+    <div class="kpi-icon">
+        <i class="{{ reporte.icono_fa }}"></i>
+    </div>
+    <h3 class="kpi-title">{{ reporte.nombre_visible }}</h3>
+    <p class="kpi-description">
+        {{ reporte.descripcion }}
+    </p>
+
+    <form action="{% url 'exportar_asociados_sp' %}" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="agencia" class="form-label">Seleccione una agencia:</label>
+            <select name="agencia" id="agencia" class="form-select" required>
+                <option value="" selected disabled>Seleccione una opción</option>
+                <option value="0">Agencia Consolidado</option>
+                <option value="103">Acacias</option>
+                <option value="109">Barranca De Upia</option>
+                <option value="111">Cabuyaro</option>
+                <option value="216">Castilla La Nueva</option>
+                <option value="108">Catama</option>
+                <option value="203">Cubarral</option>
+                <option value="206">Cumaral</option>
+                <option value="213">El Castillo</option>
+                <option value="106">Granada</option>
+                <option value="107">Guayabetal</option>
+                <option value="205">Lejanias</option>
+                <option value="211">Mesetas</option>
+                <option value="105">Montecarlo</option>
+                <option value="102">Popular</option>
+                <option value="104">Porfia</option>
+                <option value="101">Principal</option>
+                <option value="110">Puerto Gaitan</option>
+                <option value="214">Puerto Lleras</option>
+                <option value="210">Puerto Lopez</option>
+                <option value="204">Puerto Rico</option>
+                <option value="208">Tauramena</option>
+                <option value="212">Uribe</option>
+                <option value="207">Villanueva</option>
+                <option value="112">Vista Hermosa</option>
+                <option value="209">Yopal</option>
+
+            </select>
+        </div>
+        <button type="submit" class="kpi-button">
+            <i class="fas fa-file-excel"></i> Generar Informe
+        </button>
+    </form>
+</div>

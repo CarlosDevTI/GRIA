@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load auth_extras %}
+
+{% block title %}Dashboard Principal - KPI A&G{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-subtitle {
+        font-size: 1.1rem;
+        color: #6c757d;
+    }
+    
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+    
+    .kpi-card {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        align-content: center;
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border-color: var(--secondary-color);
+    }
+    
+    .kpi-icon {
+        font-size: 3rem;
+        color: var(--secondary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .kpi-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .kpi-description {
+        color: #6c757d;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    
+    .kpi-button {
+        background: var(--secondary-color);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-block;
+        transition: background 0.3s ease;
+    }
+    
+    .kpi-button:hover {
+        background: #2980b9;
+        color: white;
+    }
+    
+    .kpi-button:disabled {
+        background: #e9ecef;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+    
+    /* Modal styles */
+    .modal-content {
+        border: none;
+        border-radius: 12px;
+    }
+    
+    .modal-header {
+        background: var(--primary-color);
+        color: white;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .modal-body {
+        padding: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+        .kpi-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        .page-title {
+            font-size: 2rem;
+        }
+        
+        .kpi-card {
+            padding: 1.5rem;
+        }
+    }
+    .footer-main {
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        text-align: center;
+        font-weight: 500;
+        font-size: 0.875rem;
+        width: 100%;
+    }
+
+    .div-footer {
+        padding: 0.5rem 0;
+        color: rgba(255, 255, 255, 0.9);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">Dashboard Principal</h1>
+    <p class="page-subtitle">Selecciona una aplicación para ver sus indicadores</p>
+</div>
+
+<!-- KPI Applications -->
+<div class="kpi-grid">
+    <!-- CAMBIAR LA ESTRUCTURA POR LA NUEVA REFACTORIZACIÓN -->
+    {% for reporte in reportes_autorizados %}
+        {% if reporte.card_template %}
+            {% include reporte.card_template %}
+        {% else %}
+            {% include 'gria/cards/_default_card.html' %}
+        {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Modal simple para "Próximamente" -->
+<div class="modal fade" id="comingSoonModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="comingSoonTitle">Próximamente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-clock fa-4x text-muted mb-3"></i>
+                <h4 id="comingSoonApp">Dashboard</h4>
+                <p class="text-muted">Este dashboard estará disponible pronto.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showComingSoon(appName) {
+    const modal = new bootstrap.Modal(document.getElementById('comingSoonModal'));
+    document.getElementById('comingSoonApp').textContent = appName;
+    modal.show();
+}
+function descargarReporte(indicador, url) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+
+    const csrfToken = getCookie('csrftoken');
+    
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = csrfToken;
+    form.appendChild(csrfInput);
+
+    const indicadorInput = document.createElement('input');
+    indicadorInput.type = 'hidden';
+    indicadorInput.name = 'indicador';
+    indicadorInput.value = indicador;
+    form.appendChild(indicadorInput);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+</script>
+{% endblock %}

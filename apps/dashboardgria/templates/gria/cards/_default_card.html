@@ -1,0 +1,28 @@
+<div class="kpi-card"
+    {% if reporte.activo %}
+        {% if reporte.es_descarga or reporte.identificador == 'calidad-data' %}
+            onclick="descargarReporte('{{ reporte.identificador }}', '{% url 'calidad_data' %}')"
+        {% else %}
+            onclick="window.location.href='{% url reporte.url_name %}'"
+        {% endif %}
+    {% else %}
+        onclick="showComingSoon('{{ reporte.nombre_visible }}')"
+    {% endif %}>
+
+    <div class="kpi-icon">
+        <i class="{{ reporte.icono_fa }}"></i>
+    </div>
+    <h3 class="kpi-title">{{ reporte.nombre_visible }}</h3>
+    <p class="kpi-description">
+        {{ reporte.descripcion }}
+    </p>
+    {% if reporte.activo %}
+        {% if reporte.es_descarga or reporte.identificador == 'calidad-data' %}
+            <span class="kpi-button">Descargar Excel</span>
+        {% else %}
+            <span class="kpi-button">Ir al Dashboard</span>
+        {% endif %}
+    {% else %}
+        <span class="kpi-button" style="background: #e9ecef; color: #6c757d;">Próximamente</span>
+    {% endif %}
+</div>

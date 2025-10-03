@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load cumplimiento_filters %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="header-container">
+        <h1><i class="bi bi-shield-check me-2"></i>{{ titulo }}</h1>
+        <div class="d-flex align-items-center">
+            <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#importarExcelModal">
+                <i class="bi bi-file-earmark-excel me-2"></i>Importar Indicadores
+            </button>
+            <button type="button" class="btn btn-info me-2" data-bs-toggle="modal" data-bs-target="#importarRegistrosModal">
+                <i class="bi bi-file-earmark-excel me-2"></i>Importar Registros
+            </button>
+            <a href="{% url 'agregar_indicador' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i>Agregar Indicador
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    {% comment %} {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %} {% endcomment %}
+
+    <!-- Indicators Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            {% if table_data %}
+                <div class="table-container">
+                    <table class="table indicadores-table mb-0">
+                        <thead>
+                            <tr>
+                                <!-- Fixed Columns -->
+                                <th class="sticky-column col-indicador">Indicador</th>
+                                <th class="sticky-column col-formula">Fórmula</th>
+                                <th class="sticky-column col-meta">Meta</th>
+                                <th class="sticky-column col-frecuencia">Frecuencia</th>
+                                
+                                <!-- Scrollable Month Columns -->
+                                {% for header in headers %}
+                                    <th class="month-column">
+                                        {{ header.nombre|upper }}<br>
+                                        <small class="fw-normal" style="opacity: 0.8;">{{ header.año }}</small>
+                                    </th>
+                                {% endfor %}
+                                
+                                <!-- Fixed Actions Column -->
+                                <th class="col-actions">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in table_data %}
+                                {% for formula_data in data.formulas %}
+                                    <tr class="{% if forloop.first %}fila-principal{% else %}fila-secundaria{% endif %}">
+                                        {% if forloop.first %}
+                                            <td class="sticky-column col-indicador" rowspan="{{ data.rowspan }}">
+                                                <div class="indicator-name">{{ data.indicador.nombre }}</div>
+                                                <div class="indicator-actions">
+                                                    <a href="{% url 'editar_indicador' data.indicador.id %}" class="btn btn-outline-secondary" title="Editar Nombre del Indicador">
+                                                        <i class="bi bi-pencil-fill"></i>
+                                                    </a>
+                                                    <a href="{% url 'agregar_formula' data.indicador.id %}" class="btn btn-outline-success" title="Agregar Nueva Fórmula">
+                                                        <i class="bi bi-plus-lg"></i>
+                                                    </a>
+                                                    <a href="{% url 'eliminar_indicador' data.indicador.id %}" class="btn btn-outline-danger" title="Eliminar Indicador">
+                                                        <i class="bi bi-trash-fill"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        {% endif %}
+
+                                        <!-- Formula Data -->
+                                        <td class="sticky-column col-formula">
+                                            {% if formula_data.formula %}
+                                                <div class="formula-description">{{ formula_data.formula.descripcion }}</div>
+                                            {% else %}
+                                                <span class="text-muted fst-italic">Sin fórmulas</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="sticky-column col-meta">
+                                            {% if formula_data.formula %}
+                                                <span class="badge bg-secondary meta-badge">{{ formula_data.formula.meta }}</span>
+                                            {% else %}
+                                                <span class="valor-vacio">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="sticky-column col-frecuencia">
+                                            {% if formula_data.formula %}
+                                                <span class="frecuencia-text">{{ formula_data.formula.frecuencia_medicion }}</span>
+                                            {% else %}
+                                                <span class="valor-vacio">-</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Monthly Values -->
+                                        {% for valor in formula_data.valores %}
+                                            <td class="month-column">
+                                                {% if valor and valor != '-' %}
+                                                    {{ valor|smart_format }}
+                                                {% else %}
+                                                    <span class="valor-vacio">-</span>
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+
+                                        <!-- Actions -->
+                                        <td class="col-actions">
+                                            {% if formula_data.formula %}
+                                                <div class="formula-actions">
+                                                    <a href="{% url 'gestionar_registros' formula_data.formula.id %}" class="btn btn-outline-primary" title="Gestionar Registros">
+                                                        <i class="bi bi-pencil-square"></i> Registros
+                                                    </a>
+                                                    <a href="{% url 'editar_formula' formula_data.formula.id %}" class="btn btn-outline-secondary" title="Editar Fórmula">
+                                                        <i class="bi bi-gear"></i> Editar
+                                                    </a>
+                                                    <a href="{% url 'eliminar_formula' formula_data.formula.id %}" class="btn btn-outline-danger" title="Eliminar Fórmula">
+                                                        <i class="bi bi-trash"></i> Eliminar
+                                                    </a>
+                                                </div>
+                                            {% else %}
+                                                <div class="formula-actions">
+                                                    <span class="text-muted fst-italic" style="font-size: 0.7rem;">Sin acciones</span>
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-bar-chart-line"></i>
+                    <h5>No hay indicadores registrados</h5>
+                    <p>Comienza agregando tu primer indicador.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Importar Indicadores -->
+<div class="modal fade" id="importarExcelModal" tabindex="-1" aria-labelledby="importarExcelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importarExcelModalLabel">Importar Indicadores desde Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'importar_indicadores' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="excel_file" class="form-label">Seleccionar archivo .xlsx</label>
+                        <input class="form-control" type="file" id="excel_file" name="excel_file" accept=".xlsx" required>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>Instrucciones:</strong> El archivo Excel debe contener las siguientes columnas:
+                        <ul>
+                            <li><code>nombre</code>: Nombre del indicador.</li>
+                            <li><code>formula</code>: Descripción de la fórmula.</li>
+                            <li><code>meta</code>: La meta para el indicador.</li>
+                            <li><code>frecuencia_medicion</code>: Frecuencia de medición (e.g., Mensual, Trimestral).</li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{% url 'descargar_plantilla_indicadores' %}" class="btn btn-success"><i class="bi bi-download me-2"></i>Descargar Plantilla</a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Subir Archivo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Importar Registros -->
+<div class="modal fade" id="importarRegistrosModal" tabindex="-1" aria-labelledby="importarRegistrosModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importarRegistrosModalLabel">Importar Registros desde Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'importar_registros' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="excel_file_registros" class="form-label">Seleccionar archivo .xlsx</label>
+                        <input class="form-control" type="file" id="excel_file_registros" name="excel_file" accept=".xlsx" required>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>Instrucciones:</strong> El archivo Excel debe contener las siguientes columnas:
+                        <ul>
+                            <li><code>nombre_indicador</code>: Nombre del indicador existente.</li>
+                            <li><code>formula_descripcion</code>: Descripción de la fórmula existente.</li>
+                            <li>Y columnas para cada mes en formato <code>Mes-Año</code> (e.g., <code>Enero-2024</code>).</li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{% url 'descargar_plantilla_registros' %}" class="btn btn-success"><i class="bi bi-download me-2"></i>Descargar Plantilla</a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Subir Archivo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Scroll to the end of the table to show the latest months
+    const tableContainer = document.querySelector('.table-container');
+    if (tableContainer) {
+        setTimeout(function() {
+            tableContainer.scrollLeft = tableContainer.scrollWidth;
+        }, 100);
+    }
+});
+</script>
+{% endblock %}
