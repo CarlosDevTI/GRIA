@@ -15,17 +15,17 @@ services:
 
   db:
     #* USAR LA IMAGEN OFICIAL DE MYSQL
-    image: mysql:8.0
+    image: postgres:13-alpine
     #* CONFIGURAR LA BASE DE DATOS CON VARIABLES DE ENTORNO
     environment:
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD} # Contraseña para el usuario root de MySQL
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     #* ASEGURAR QUE LOS DATOS PERSISTAN AUNQUE SE REINICIE EL CONTENEDOR
     volumes:
-      - mysql_data:/var/lib/mysql
+    - postgres_data:/var/lib/postgresql/data/
+    restart: always
 
 #* DEFINIR EL VOLUMEN PARA LA PERSISTENCIA DE DATOS
 volumes:
-  mysql_data:
+  postgres_data:

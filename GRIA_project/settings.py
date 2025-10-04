@@ -89,12 +89,12 @@ WSGI_APPLICATION = 'GRIA_project.wsgi.application'
 if config('ENVIRONMENT', default='local') == 'production':
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
+            'ENGINE': 'django.db.backends.postgresql',  #! Nueva base de datos
             'NAME': config('DB_NAME'),
             'USER': config('DB_USER'),
             'PASSWORD': config('DB_PASSWORD'),
-            'HOST': config('DB_HOST', default='db'), # Se conecta al servicio 'db' de Docker Compose
-            'PORT': config('DB_PORT', default='3306'),
+            'HOST': config('DB_HOST', default='db'),
+            'PORT': config('DB_PORT', default='5432'),      #! Nuevo puerto
         }
     }
 else:

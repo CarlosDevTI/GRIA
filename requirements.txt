@@ -5,8 +5,6 @@ distlib==0.3.9
 Django==5.1.4
 et_xmlfile==2.0.0
 filelock==3.17.0
-mysql==0.0.3
-mysqlclient==2.2.7
 numpy==2.3.2
 openpyxl==3.1.5
 oracledb==3.1.0
@@ -21,3 +19,4 @@ sqlparse==0.5.3
 tzdata==2024.2
 virtualenv==20.29.1
 google-generativeai
+psycopg2-binary==2.9.9
