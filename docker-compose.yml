@@ -9,23 +9,30 @@ services:
     ports:
       - "8002:8002"
     env_file: .env
-    #* HACER QUE LA APP WEB ESPERE A QUE LA BASE DE DATOS ESTÉ LISTA
     depends_on:
       - db
+    #! healthcheck para esperar correctamente a la BD
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('db', 5432), timeout=2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   db:
-    #* USAR LA IMAGEN OFICIAL DE MYSQL
     image: postgres:13-alpine
-    #* CONFIGURAR LA BASE DE DATOS CON VARIABLES DE ENTORNO
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-    #* ASEGURAR QUE LOS DATOS PERSISTAN AUNQUE SE REINICIE EL CONTENEDOR
     volumes:
-    - postgres_data:/var/lib/postgresql/data/
+      - postgres_data:/var/lib/postgresql/data/
     restart: always
+    # Agregar healthcheck para PostgreSQL
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-#* DEFINIR EL VOLUMEN PARA LA PERSISTENCIA DE DATOS
 volumes:
   postgres_data:
