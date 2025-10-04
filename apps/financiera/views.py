@@ -18,7 +18,7 @@ import json
 logger = logging.getLogger(__name__)
 
 #! Configuración de clientes de IA
-client = OpenAI(api_key=settings.OPENAI_API_KEY or None)
+client = OpenAI(api_key=settings.OPENAI_API_KEY or "")
 
 def _get_rename_map(selected_apre_type):
     """Devuelve el diccionario de renombrado de columnas para el tipo de APRE."""

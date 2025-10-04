@@ -9,7 +9,7 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
 from .oracle_service import *
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY or None)
+client = OpenAI(api_key=settings.OPENAI_API_KEY or "")
 
 logger = logging.getLogger(__name__)
 
