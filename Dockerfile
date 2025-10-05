@@ -11,16 +11,17 @@ WORKDIR /app
 #* COPIAR LAS DEPENDENCIAS
 COPY requirements.txt .
 
-#* AHORA SI INSTALAR LAS DEPENDENCIAS
+# INSTALAR DEPENDENCIAS DEL SISTEMA (PostgreSQL, no MySQL)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
-    default-libmysqlclient-dev \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 #* COPIAR E INSTALAR LAS DEPENDENCIAS DE PYTHON 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 #* COPIAR TODO EL CODIGO DEL PROYECTO AL DIRECTORIO DE TRABAJO
 COPY . .
