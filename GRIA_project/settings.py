@@ -28,7 +28,7 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
 
-# ALLOWED_HOSTS = ['192.168.15.215']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
 
 # Application definition
