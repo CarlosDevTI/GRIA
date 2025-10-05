@@ -9,7 +9,16 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
 from .oracle_service import *
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY or "")
+#! Configuración de clientes de IA
+try:
+    if settings.OPENAI_API_KEY:
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    else:
+        client = None
+        logger.warning("OPENAI_API_KEY no configurada - funciones de IA deshabilitadas")
+except Exception as e:
+    logger.error(f"Error inicializando cliente OpenAI: {e}")
+    client = None
 
 logger = logging.getLogger(__name__)
 

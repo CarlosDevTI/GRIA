@@ -18,7 +18,15 @@ import json
 logger = logging.getLogger(__name__)
 
 #! Configuración de clientes de IA
-client = OpenAI(api_key=settings.OPENAI_API_KEY or "")
+try:
+    if settings.OPENAI_API_KEY:
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+    else:
+        client = None
+        logger.warning("OPENAI_API_KEY no configurada - funciones de IA deshabilitadas")
+except Exception as e:
+    logger.error(f"Error inicializando cliente OpenAI: {e}")
+    client = None
 
 def _get_rename_map(selected_apre_type):
     """Devuelve el diccionario de renombrado de columnas para el tipo de APRE."""
