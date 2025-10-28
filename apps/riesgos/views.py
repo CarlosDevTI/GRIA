@@ -206,8 +206,28 @@ class DashboardSarcView(TemplateView):
             if not ind_code: continue
 
             parametro = parametros_manuales.get(ind_code)
-            valores_historicos = [float(str(d['VALOR']).replace(',', '.')) for d in raw_data if d.get('INDICADOR') == ind_code and d.get('VALOR') is not None]
-            valor_actual = max(valores_historicos) if valores_historicos else 0
+
+            # Lógica para obtener el valor más reciente basado en el campo 'MES'
+            datos_indicador_historicos = [d for d in raw_data if d.get('INDICADOR') == ind_code and d.get('VALOR') is not None and d.get('MES') is not None]
+            
+            valor_actual = 0
+            if datos_indicador_historicos:
+                # Añadir fecha parseada y filtrar registros sin fecha válida
+                datos_con_fecha = []
+                for d in datos_indicador_historicos:
+                    fecha_obj, _ = parse_fecha_mes(d.get('MES'))
+                    if fecha_obj:
+                        d['parsed_date'] = fecha_obj
+                        datos_con_fecha.append(d)
+                
+                # Si hay datos con fecha, ordenar y obtener el valor más reciente
+                if datos_con_fecha:
+                    datos_con_fecha.sort(key=lambda x: x['parsed_date'], reverse=True)
+                    registro_mas_reciente = datos_con_fecha[0]
+                    try:
+                        valor_actual = float(str(registro_mas_reciente['VALOR']).replace(',', '.'))
+                    except (ValueError, TypeError):
+                        valor_actual = 0
 
             if parametro and parametro.valor_override is not None:
                 valor_actual = parametro.valor_override
@@ -215,7 +235,6 @@ class DashboardSarcView(TemplateView):
             apetito, tolerancia, capacidad, riesgo = None, None, None, 'N/A'
             if parametro and all(p is not None for p in [parametro.apetito, parametro.tolerancia, parametro.capacidad]):
                 apetito, tolerancia, capacidad = parametro.apetito, parametro.tolerancia, parametro.capacidad
-                print("valores: ",apetito, tolerancia, capacidad)
                 if valor_actual < apetito:
                     riesgo = 'Bajo'
                 else:    
@@ -546,13 +565,30 @@ class DashboardSarLView(TemplateView):
 
             parametro = parametros_manuales.get(ind_code)
             
-            # Usar el nombre del indicador para filtrar los datos brutos, ya que el código puede no estar en los datos
-            valores_historicos = [
-                float(str(d['VALOR']).replace(',', '.')) 
-                for d in raw_data 
-                if SARL_INDICADOR_MAP.get(str(d.get('INDICADOR', '')).strip()) == nombre_indicador and d.get('VALOR') is not None
+            # Lógica para obtener el valor más reciente basado en el campo 'MES'
+            datos_indicador_historicos = [
+                d for d in raw_data 
+                if SARL_INDICADOR_MAP.get(str(d.get('INDICADOR', '')).strip()) == nombre_indicador and d.get('VALOR') is not None and d.get('MES') is not None
             ]
-            valor_actual = max(valores_historicos) if valores_historicos else 0
+
+            valor_actual = 0
+            if datos_indicador_historicos:
+                # Añadir fecha parseada y filtrar registros sin fecha válida
+                datos_con_fecha = []
+                for d in datos_indicador_historicos:
+                    fecha_obj, _ = parse_fecha_mes(d.get('MES'))
+                    if fecha_obj:
+                        d['parsed_date'] = fecha_obj
+                        datos_con_fecha.append(d)
+
+                # Si hay datos con fecha, ordenar y obtener el valor más reciente
+                if datos_con_fecha:
+                    datos_con_fecha.sort(key=lambda x: x['parsed_date'], reverse=True)
+                    registro_mas_reciente = datos_con_fecha[0]
+                    try:
+                        valor_actual = float(str(registro_mas_reciente['VALOR']).replace(',', '.'))
+                    except (ValueError, TypeError):
+                        valor_actual = 0
 
             if parametro and parametro.valor_override is not None:
                 valor_actual = parametro.valor_override
@@ -560,7 +596,6 @@ class DashboardSarLView(TemplateView):
             apetito, tolerancia, capacidad, riesgo = None, None, None, 'N/A'
             if parametro and all(p is not None for p in [parametro.apetito, parametro.tolerancia, parametro.capacidad]):
                 apetito, tolerancia, capacidad = parametro.apetito, parametro.tolerancia, parametro.capacidad
-                print("valores: ",apetito, tolerancia, capacidad)
                 if valor_actual < apetito:
                     riesgo = 'Bajo'
                 else:    
