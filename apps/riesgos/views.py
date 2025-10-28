@@ -642,4 +642,3 @@ class DashboardSarLDataJsonView(TemplateView):
             })
         
         return JsonResponse({"trend_data": trend_data, "chart_labels": chart_x_labels}, safe=False)
-lse)
