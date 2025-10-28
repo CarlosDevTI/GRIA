@@ -219,7 +219,7 @@ class DashboardSarcView(TemplateView):
                 if valor_actual < apetito:
                     riesgo = 'Bajo'
                 else:    
-                    if valor_actual < capacidad & valor_actual > apetito:
+                    if valor_actual < capacidad and valor_actual > apetito:
                         riesgo = 'Medio'
                     else:
                         riesgo = 'Alto'
@@ -564,7 +564,7 @@ class DashboardSarLView(TemplateView):
                 if valor_actual < apetito:
                     riesgo = 'Bajo'
                 else:    
-                    if valor_actual < capacidad & valor_actual > apetito:
+                    if valor_actual < capacidad and valor_actual > apetito:
                         riesgo = 'Medio'
                     else:
                         riesgo = 'Alto'
