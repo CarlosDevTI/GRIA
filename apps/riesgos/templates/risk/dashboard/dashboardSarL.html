@@ -1,433 +1,852 @@
-{# templates/dashboard_sarl.html #}
+{# templates/risk/dashboard/dashboardSarL.html #}
 {% extends "base.html" %}
-{% load custom_filters %}
+{% load custom_filters_sarc %}
 {% block title %}Dashboard SARL{% endblock %}
-{% block content %}
-<h1 class = "mb-4"><strong>Dashboard SARL - Gestión de Riesgos</strong></h1>
 
-<div class="mb-4">
-    <h3>Tabla de Indicadores SARL</h3>
-    <div class="table-responsive">
-        {% comment %} <input type="text" id="search-sarl" placeholder="Buscar..." class="form-control mb-2" /> {% endcomment %}
-        <div class="row">
-            <div class="col-md-12 text-end">
-                <small class="text-muted">{{ limites_sarl_table_data|length }} indicador(es) encontrado(s)</small>
-            </div>
-                </div>
-        <table id="table-sarl" class="table table-striped table-bordered">
-            <thead class="table-primary">
-                <tr>
-                    <th>Tipo</th>
-                    <th>Nombre Indicador</th>
-                    <th>Metodologia</th>
-                    {% for month in months_columns_sarl %}
-                    <th class="text-center">{{ month.display|upper }}</th>
-                    {% endfor %}
-                    <th class="text-center">Variación Intermensual</th>
-                    <th class="text-center">Indicador Riesgo</th>
-                    <th class="text-center">Límite Apetito</th>
-                    <th class="text-center">Límite Tolerancia</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in limites_sarl_table_data %}
-                <tr class="status-{{ row.indicador_riesgo|lower|replace:"ñ,n"|replace:" ,_" }}">
-                    <td>{{ row.tipo }}</td>
-                    <td>{{ row.nombre }}</td>
-                    <td>{{ row.metodologia }}</td>
-                    {% for month in months_columns_sarl %}
-                        <td class="text-end">
-                            {% if row.monthly_values|lookup:month.key != '-' %}
-                                {{ row.monthly_values|lookup:month.key|floatformat:1 }}
-                            {% else %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                    {% endfor %}
-                    <td class="text-center">{{ row.variacion_porcentaje|default:"-" }}</td>
-                    <td class="text-center">
-                        <span class="badge {% if row.indicador_riesgo == 'Bajo' %}bg-success
-                            {% elif row.indicador_riesgo == 'Medio' %}bg-warning
-                            {% elif row.indicador_riesgo == 'Alto' %}bg-danger
-                            {% else %}bg-secondary{% endif %}">{{ row.indicador_riesgo }}</span>
-                    </td>
-                    <td class="text-end">{{ row.limite_apetito|default:"-" }}</td>
-                    <td class="text-end">{{ row.limite_tolerancia|default:"-" }}</td>
-                    
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% if not limites_sarl_table_data %}
-        <div class="text-center text-muted py-4">
-            <i class="fas fa-info-circle me-2"></i>No hay datos de indicadores SARL disponibles.
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Dashboard SARL - Gestión de Riesgos de Liquidez</h1>
+        <div class="btn-group" role="group">
+            <a href="{% url 'upload_parametros_riesgo' %}" class="btn btn-primary">
+                <i class="bi bi-upload me-2"></i>Cargar Parámetros
+            </a>
         </div>
+    </div>
+
+    <!-- TABLA DE LÍMITES Y NIVELES DE RIESGO LADO A LADO -->
+    <div class="row">
+        <!-- COLUMNA IZQUIERDA: TABLA DE LÍMITES (75% del ancho) -->
+        <div class="col-lg-9 mb-4">
+            <div class="card-risk h-100">
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <span><i class="bi bi-table me-2"></i>Indicadores no graficables</span>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">{{ limites_table_data|length }} indicador(es) encontrado(s)</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="overflow-x: auto;">
+                        <table id="table-limites" class="table table-striped table-bordered table-hover mb-0">
+                            <thead class="table-primary sticky-top">
+                                <tr>
+                                    <th class="sticky-column">NOMBRE INDICADOR</th>
+                                    {% for month in months_columns %}
+                                        <th class="text-center">{{ month.display|upper }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in limites_table_data %}
+                                <tr>
+                                    <td class="sticky-column"><strong>{{ row.nombre }}</strong></td>
+                                    {% for month in months_columns %}
+                                        <td class="text-end">
+                                            {% if row.monthly_values|lookup:month.key != '-' %}
+                                                {{ row.monthly_values|lookup:month.key|floatformat:2|default:"-" }}%
+                                            {% else %}
+                                                <span class="text-muted">0%</span>
+                                            {% endif %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="100%" class="text-center text-muted py-4">
+                                        <i class="bi bi-info-circle-fill me-2"></i>No hay datos de límites disponibles
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- COLUMNA DERECHA: TABLA DE NIVELES DE RIESGO (25% del ancho) -->
+        <div class="col-lg-3 mb-4">
+            <div class="card-risk risk-levels-card h-100">
+                <div class="card-header">
+                    <span><i class="bi bi-shield-exclamation me-2"></i>LÍMITES *</span>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered text-center mb-0 risk-levels-table">
+                        <thead>
+                            <tr>
+                                <th class="risk-header">Riesgo</th>
+                                <th class="apetito">APETITO</th>
+                                <th class="tolerancia">TOLERANCIA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fila in tabla_riesgo_limites %}
+                                <tr>
+                                    <td class="{% if fila.RIESGO == 'Alto' %}risk-high{% elif fila.RIESGO == 'Medio' %}risk-medium{% else %}risk-low{% endif %}">
+                                        {{ fila.RIESGO }}
+                                    </td>
+                                    <td>{{ fila.APETITO|floatformat:1 }}%</td>
+                                    <td>{{ fila.TOLERANCIA|floatformat:1 }}%</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TABLA DE INDICADORES (Graficable) -->
+    <div class="row">
+        <!-- COLUMNA IZQUIERDA: TABLA DE INDICADORES (75% del ancho) -->
+        <div class="col-lg-9 mb-4">     
+            <div class="card-risk h-100">
+                <div class="card-header">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <span><i class="bi bi-bar-chart-line-fill me-2"></i>Indicadores graficables</span>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">{{ indicadores_table_data|length }} indicador(es) encontrado(s)</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="overflow-x: auto;">
+                        <table id="table-indicadores" class="table table-striped table-bordered table-hover mb-0">
+                            <thead class="table-success sticky-top">
+                                <tr>
+                                    <th class="sticky-column">NOMBRE INDICADOR</th>
+                                    {% for month in months_columns %}
+                                        <th class="text-center">{{ month.display|upper }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in indicadores_table_data %}
+                                <tr>
+                                    <td class="sticky-column"><strong>{{ row.nombre }}</strong></td>
+                                    {% for month in months_columns %}
+                                        <td class="text-end">
+                                            {% if row.monthly_values|lookup:month.key != '-' %}
+                                                {{ row.monthly_values|lookup:month.key|floatformat:2|default:"-" }}%
+                                            {% else %}
+                                                <span class="text-muted">0%</span>
+                                            {% endif %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="100%" class="text-center text-muted py-4">
+                                        <i class="bi bi-info-circle-fill me-2"></i>No hay datos de indicadores disponibles
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- COLUMNA DERECHA: TABLA DE NIVELES DE RIESGO (25% del ancho) -->
+        <div class="col-lg-3 mb-4">
+            <div class="card-risk risk-levels-card h-100">
+                <div class="card-header">
+                    <span><i class="bi bi-shield-exclamation me-2"></i>LÍMITES *</span>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered text-center mb-0 risk-levels-table">
+                        <thead>
+                            <tr>
+                                <th class="risk-header">Riesgo</th>
+                                <th class="apetito">APETITO</th>
+                                <th class="tolerancia">TOLERANCIA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fila in tabla_riesgo_indicadores %}
+                                <tr>
+                                    <td class="{% if fila.RIESGO == 'Alto' %}risk-high{% elif fila.RIESGO == 'Medio' %}risk-medium{% else %}risk-low{% endif %}">
+                                        {{ fila.RIESGO }}
+                                    </td>
+                                    <td>{{ fila.APETITO|floatformat:1 }}%</td>
+                                    <td>{{ fila.TOLERANCIA|floatformat:1 }}%</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <canvas id="concentrationChart" width="400" height="300"></canvas>
+    <canvas id="riskGaugeChart" width="400" height="300"></canvas>
+    <!-- GRÁFICAS (Solo para Indicadores) -->
+    <h3><i class="bi bi-graph-up me-2"></i>Gráficos de Tendencias por Indicador</h3>
+    <div class="row" id="sarl-charts-container">
+        {% if indicadores_table_data %}
+            {% for indicator_data in indicadores_table_data %}
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>{{ indicator_data.nombre }}</h5>
+                        <small class="text-muted">Tendencia histórica</small>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="trend-chart-sarl-{{ forloop.counter0 }}"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12"><p class="text-muted">No hay indicadores graficables para mostrar.</p></div>
         {% endif %}
     </div>
 </div>
 
-<div class="row gy-4" id="sarl-charts-container">
-    {# Los gráficos de tendencia individuales se insertarán aquí por JS #}
-    <div class="col-lg-6">
-        <h3>Medidor de Riesgo Último Mes</h3>
-        <div style="height: 300px; position: relative;">
-            <canvas id="gauge-chart"></canvas>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <h3>Distribución Porcentual de Niveles</h3>
-        <div style="height: 300px; position: relative;">
-            <canvas id="pie-chart"></canvas>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <h3>Frecuencia de Niveles</h3>
-        <div style="height: 300px; position: relative;">
-            <canvas id="bar-chart"></canvas>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_css %}
+<style>
+    /* Estilos idénticos a dashboardSarc.html */
+    .container-fluid > h1 { font-size: 1.6rem; font-weight: 600; }
+    .mb-5 h3 { font-size: 1.25rem; }
+    .table-responsive .table { font-size: 0.78rem; }
+    .table-responsive .table th, .table-responsive .table td { padding: 0.35rem 0.5rem; white-space: nowrap; }
+    .table-responsive .table thead th { font-size: 0.7rem; text-transform: uppercase; font-weight: 600; }
+    .sticky-column { position: sticky; left: 0; background-color: #fff; z-index: 30; border-right: 2px solid #dee2e6 !important; }
+    .table-responsive { position: relative !important; border: 1px solid #dee2e6; border-radius: 0.375rem; }
+    .sticky-top .sticky-column { z-index: 40 !important; }
+    .table-hover tbody tr:hover { background-color: rgba(0, 123, 255, 0.1); }
+    .card { box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); border: 1px solid rgba(0, 0, 0, 0.125); }
+    .card-header { background-color: #f8f9fa; border-bottom: 1px solid rgba(0, 0, 0, 0.125); padding: 0.25rem 0.5rem; }
+    @media (max-width: 768px) { .sticky-column { min-width: 150px; left: 0; } }
+    .table-responsive > .table { overflow: visible!important; }
+    .risk-levels-table { font-size: 0.875rem; }
+    .risk-levels-table th, .risk-levels-table td { padding: 0.5rem; vertical-align: middle; }
+    .risk-high { background-color: #dc3545 !important; color: white !important; }
+    .risk-medium { background-color: #fd7e14 !important; color: white !important; }
+    .risk-low { background-color: #28a745 !important; color: white !important; }
+    .risk-header { background-color: #6c757d !important; color: white !important; }
+    .apetito { background-color: #28a745 !important; color: white !important; }
+    .tolerancia { background-color: #ffc107 !important; color: black !important; }
+    .capacidad { background-color: #dc3545 !important; color: white !important; }
+    .table td, .table th, .risk-levels-table td, .risk-levels-table th { padding: 0.4rem 0.6rem; font-size: 0.8rem; vertical-align: middle; height: 2.2rem; }
+    @media (max-width: 991.98px) { .risk-levels-card { position: relative; top: 0; } }
+</style>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-/* Pagination and searching simple client-side */
-const sarlTable = $('#table-sarl tbody');
-const sarlRows = sarlTable.find('tr');
-const rowsPerPageSarl = 10;
-let currentPageSarl = 1;
+// =========================
+// Variables globales
+// =========================
+let sarlTrendCharts = {};
 
-function showPageSarl(page) {
-    currentPageSarl = page;
-    sarlRows.hide();
-    const start = (page - 1) * rowsPerPageSarl;
-    sarlRows.slice(start, start + rowsPerPageSarl).show();
-    renderPaginationSarl();
-}
-function renderPaginationSarl() {
-    const pages = Math.ceil(sarlRows.length / rowsPerPageSarl);
-    const pagination = $('#pagination-sarl');
-    pagination.empty();
-    for(let i=1;i<=pages;i++) {
-        pagination.append(`<li class="page-item${i === currentPageSarl? " active":""}"><a class="page-link" href="#">${i}</a></li>`);
-    }
-    $('.page-link').click(function(e){
-        e.preventDefault();
-        showPageSarl(parseInt($(this).text()));
-    });
-}
-$('#search-sarl').on('input', function(){
-    const term = $(this).val().toLowerCase();
-    sarlRows.each(function(){
-        const rowText = $(this).text().toLowerCase();
-        $(this).toggle(rowText.indexOf(term) > -1);
-    });
-    showPageSarl(1);
-});
-showPageSarl(1);
-
-/* Fetch data for SARL charts */
-function fetchSarlChartData() {
-    return $.ajax("{% url 'dashboard_sarl_data_json' %}");
-}
-
-/* Chart.js Charts */
-let sarlTrendCharts = {}; // Para gráficos de tendencia individuales
-let gaugeChart, pieChart, barChart; // Para los otros gráficos
-
-
-
-function renderGaugeChart(value, limits) {
-    // We'll draw a simple gauge chart with Chart.js using a doughnut with colored zones and a needle
-    // limits = {limite_apetito: num, limite_tolerancia: num} - values from context
-    const ctx = document.getElementById('gauge-chart').getContext('2d');
-    if(gaugeChart) gaugeChart.destroy();
-
-    // Using doughnut doughnut approach with gradients for gauge sectors:
-    // 'value' es el indice_riesgo_general_sarl (0-100)
-    // 'limits' define los umbrales visuales para el color: e.g., {apetito_pct: 33, tolerancia_pct: 66, max_pct: 100}
-    const data_gauge = {
-        labels: ['Riesgo Bajo', 'Riesgo Medio', 'Riesgo Alto'],
-        datasets: [{
-            data: [
-                limits.apetito_pct, // Verde
-                limits.tolerancia_pct - limits.apetito_pct, // Amarillo
-                limits.max_pct - limits.tolerancia_pct // Rojo
-            ],
-            backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
-            borderWidth: 0,
-            circumference: 180,
-            rotation: 270,
-        }]
-    };
-
-    gaugeChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: data_gauge,
-        options: {
-            circumference: 180,
-            rotation: 270,
-            cutout: '70%',
-            plugins: {
-                legend: {display: true, position: 'bottom'},
-                tooltip: {enabled: false},
-                annotation: {
-                    annotations: {
-                        needle: {
-                            type: 'line',
-                            xScaleID: 'x',
-                            yScaleID: 'y',
-                            borderColor: 'black',
-                            borderWidth: 2,
-                            xMin: 50,
-                            xMax: 50,
-                            yMin: 0,
-                            yMax: 50,
-                        }
-                    }
-                }
-            }
-        }
-    });
-
-    // Draw needle manually on top of chart for gauge needle at value %
-    function drawNeedle(chart, value) {
-        const {ctx, chartArea: {left, right, top, bottom, width, height}, scales} = chart;
-
-        const angle = Math.PI * (1 + (value / 100));
-        // const cx = (left + right) / 2;
-        const cx = width / 2; // Usar el centro del canvas directamente
-        const cy = bottom;
-
-        const needleLength = height * 0.6;
-        const needleX = cx + needleLength * Math.cos(angle);
-        const needleY = cy + needleLength * Math.sin(angle);
-
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(angle);
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(needleLength, 0);
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = 'black';
-        ctx.stroke();
-        ctx.restore();
-
-        // Draw circle center
-        ctx.beginPath();
-        ctx.arc(cx, cy, 7, 0, 2 * Math.PI);
-        ctx.fillStyle = 'black';
-        ctx.fill();
-
-        // Draw text value
-        ctx.font = "16px Arial";
-        ctx.fillStyle = 'black';
-        ctx.textAlign = "center";
-        ctx.fillText(`${value.toFixed(1)}%`, cx, cy - 15); // Ajustar posición del texto
-    }
-
-    gaugeChart.options.animation = {
-        onComplete: function() {
-            drawNeedle(gaugeChart, value);
-        },
-    };
-    gaugeChart.update();
-}
-
-function renderPieChart(distribucion) {
-    const ctx = document.getElementById('pie-chart').getContext('2d');
-    if(pieChart) pieChart.destroy();
-    const labels = Object.keys(distribucion).map(k => k.charAt(0).toUpperCase() + k.slice(1).replace('_', ' '));
-    const values = Object.values(distribucion);
-    const bgColors = labels.map(l => {
-        if(l.toLowerCase().includes('apetito')) return '#28a745';
-        if(l.toLowerCase().includes('tolerancia')) return '#ffc107';
-        if(l.toLowerCase().includes('fuera')) return '#dc3545';
-        return '#6c757d';
-    });
-    pieChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {labels: labels, datasets: [{data: values, backgroundColor: bgColors}]},
-        options: {
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: ctx => `${ctx.label}: ${ctx.parsed.toFixed(1)}%`
-                    }
-                },
-                legend: {position: 'bottom'}
-            },
-            maintainAspectRatio: false,
-        }
-    });
-}
-
-function renderBarChart(frecuencia) {
-    const ctx = document.getElementById('bar-chart').getContext('2d');
-    if(barChart) barChart.destroy();
-    const labels = Object.keys(frecuencia).map(k => k.charAt(0).toUpperCase() + k.slice(1).replace('_',' '));
-    const values = Object.values(frecuencia);
-    const bgColors = labels.map(l => {
-        if(l.toLowerCase().includes('apetito')) return '#28a745';
-        if(l.toLowerCase().includes('tolerancia')) return '#ffc107';
-        if(l.toLowerCase().includes('fuera')) return '#dc3545';
-        return '#6c757d';
-    });
-    barChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Frecuencia',
-                data: values,
-                backgroundColor: bgColors
-            }]
-        },
-        options: {
-            plugins: {
-                tooltip: {enabled: true},
-                legend: {display: false}
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {precision: 0}
-                }
-            },
-            maintainAspectRatio: false,
-        }
-    });
-}
-
+// =========================
+// Funciones de ayuda
+// =========================
 function getRandomColor() {
-    return 'hsl(' + Math.floor(Math.random()*360) + ', 70%, 50%)';
+    const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF'];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function showErrorMessage(message) {
+    console.error(message);
+    if (typeof toastr !== 'undefined') {
+        toastr.error(message);
+    } else {
+        alert(message);
+    }
 }
 
 function destroyAllSarlCharts() {
     Object.values(sarlTrendCharts).forEach(chart => {
-        if (chart && chart.destroy) chart.destroy();
+        if (chart && chart.destroy) {
+            chart.destroy();
+        }
     });
     sarlTrendCharts = {};
-    if(gaugeChart) gaugeChart.destroy();
-    if(pieChart) pieChart.destroy();
-    if(barChart) barChart.destroy();
 }
 
-function renderIndividualTrendChartSarl(indicatorData, canvasId) {
+// =======================================================
+// RENDERIZAR GRÁFICO INDIVIDUAL
+// =======================================================
+function renderIndividualSarlTrendChart(indicatorData, commonChartLabels, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
-        console.error(`Canvas SARL con ID ${canvasId} no encontrado.`);
+        console.error(`Canvas con ID ${canvasId} no encontrado.`);
         return;
     }
-    const ctx = canvas.getContext('2d');
 
+    const ctx = canvas.getContext('2d');
+    
     if (sarlTrendCharts[canvasId]) {
         sarlTrendCharts[canvasId].destroy();
     }
 
     if (!indicatorData || !indicatorData.data_points || indicatorData.data_points.length === 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.font = "14px Arial";
+        ctx.font = "16px Arial";
         ctx.textAlign = "center";
         ctx.fillStyle = "#666";
-        ctx.fillText("No hay datos de tendencia", canvas.width / 2, canvas.height / 2);
+        ctx.fillText("No hay datos disponibles para este indicador", canvas.width / 2, canvas.height / 2);
         return;
     }
+
+    const color = getRandomColor();
     
+    const chartData = commonChartLabels.map(label => {
+        const point = indicatorData.data_points.find(p => p.fecha === label);
+        return point ? point.valor : null;
+    });
+
     const datasets = [{
-        label: indicatorData.nombre_indicador,
-        data: indicatorData.data_points.map(p => ({x: p.fecha, y: p.valor !== null ? parseFloat(p.valor) : NaN })),
-        borderColor: getRandomColor(),
-        backgroundColor: 'rgba(0,0,0,0)',
+        label: indicatorData.nombre_limite || 'Indicador sin nombre',
+        data: chartData,
+        borderColor: color,
+        backgroundColor: color + '20',
         fill: false,
         tension: 0.3,
         pointRadius: 4,
         pointHoverRadius: 6,
+        pointBackgroundColor: color,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        spanGaps: true
     }];
 
-    sarlTrendCharts[canvasId] = new Chart(ctx, {
-        type: 'line',
-        data: { datasets: datasets },
+    // Líneas de referencia (Apetito, Tolerancia)
+    if (indicatorData.apetito !== null) {
+        datasets.push({
+            label: 'Apetito',
+            data: Array(commonChartLabels.length).fill(indicatorData.apetito),
+            borderColor: '#28a745',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            pointRadius: 0,
+            fill: false
+        });
+    }
+
+    if (indicatorData.tolerancia !== null) {
+        datasets.push({
+            label: 'Tolerancia',
+            data: Array(commonChartLabels.length).fill(indicatorData.tolerancia),
+            borderColor: '#ffc107',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            pointRadius: 0,
+            fill: false
+        });
+    }
+
+    try {
+        sarlTrendCharts[canvasId] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: commonChartLabels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: false },
+                    legend: { 
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            boxWidth: 12,
+                            font: { size: 10 }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            title: function(context) {
+                                return context[0].label.toUpperCase();
+                            },
+                            label: function(context) {
+                                const value = context.parsed.y;
+                                return value !== null ? `${context.dataset.label}: ${value.toFixed(2)}%` : 'Sin datos';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { 
+                        type: 'category',
+                        title: { 
+                            display: true, 
+                            text: 'Período',
+                            font: { size: 12 }
+                        },
+                        grid: {
+                            display: true,
+                            color: 'rgba(0,0,0,0.1)'
+                        }
+                    },
+                    y: { 
+                        title: { 
+                            display: true, 
+                            text: 'Valor (%)',
+                            font: { size: 12 }
+                        },
+                        beginAtZero: false,
+                        grid: {
+                            display: true,
+                            color: 'rgba(0,0,0,0.1)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(2) + '%';
+                            }
+                        }
+                    }
+                },
+                interaction: { 
+                    mode: 'index', 
+                    intersect: false 
+                }
+            }
+        });
+    } catch (error) {
+        console.error(`Error creando gráfico para ${canvasId}:`, error);
+    }
+}
+
+// ======================================================
+// CARGAR Y PROCESAR DATOS
+// ======================================================
+function fetchSarlChartData() {
+    const dataUrl = "{% url 'dashboard_sarl_data_json' %}";
+    
+    fetch(dataUrl, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("=== DATOS RECIBIDOS DEL SERVIDOR (SARL) ===", data);
+        
+        destroyAllSarlCharts();
+        
+        if (data?.trend_data?.length && data?.chart_labels?.length) {
+            data.trend_data.forEach((indicatorData, index) => {
+                const canvasId = `trend-chart-sarl-${index}`;
+                renderIndividualSarlTrendChart(indicatorData, data.chart_labels, canvasId);
+            });
+        } else {
+            const container = document.getElementById('sarl-charts-container');
+            if (container) {
+                container.innerHTML = '<div class="col-12"><p class="text-center text-muted">No hay datos de gráficos para mostrar.</p></div>';
+            }
+        }
+    })
+    .catch(error => {
+        console.error("ERROR AL CARGAR DATOS (SARL):", error);
+        showErrorMessage("No se pudieron cargar los datos de los gráficos. Por favor, intente nuevamente.");
+        
+        const container = document.getElementById('sarl-charts-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Error al cargar los gráficos: ${error.message}
+                    </div>
+                </div>
+            `;
+        }
+    });
+}
+// =======================================================
+// GRÁFICO DE CONCENTRACIÓN CIRCULAR (DONA)
+// =======================================================
+/**
+ * Renderiza un gráfico circular que muestra la concentración de indicadores
+ * por escala de riesgo con etiquetas y porcentajes
+ * 
+ * @param {Object} data - Datos de concentración por escala
+ * @param {string} canvasId - ID del canvas donde se renderizará
+ * 
+ * Ejemplo de data:
+ * {
+ *   "Muy alto": 2,
+ *   "Alto": 0,
+ *   "Medio": 3,
+ *   "Bajo": 7,
+ *   "Mínimo": 14
+ * }
+ */
+function renderConcentrationChart(data, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error(`Canvas con ID ${canvasId} no encontrado.`);
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    
+    // Destruir gráfico previo si existe
+    if (window.concentrationCharts && window.concentrationCharts[canvasId]) {
+        window.concentrationCharts[canvasId].destroy();
+    }
+    
+    if (!window.concentrationCharts) {
+        window.concentrationCharts = {};
+    }
+
+    // Definir colores por escala de riesgo (de mayor a menor riesgo)
+    const colorMap = {
+        'Muy alto': '#dc3545',  // Rojo
+        'Alto': '#fd7e14',      // Naranja
+        'Medio': '#ffc107',     // Amarillo
+        'Bajo': '#a8d08d',      // Verde claro
+        'Mínimo': '#28a745'     // Verde
+    };
+
+    // Preparar datos para el gráfico
+    const labels = Object.keys(data);
+    const values = Object.values(data);
+    const colors = labels.map(label => colorMap[label] || '#6c757d');
+    
+    // Calcular total para porcentajes
+    const total = values.reduce((sum, val) => sum + val, 0);
+
+    // Configuración del gráfico tipo dona
+    window.concentrationCharts[canvasId] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: colors,
+                borderColor: '#fff',
+                borderWidth: 2,
+                hoverOffset: 10
+            }]
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {mode: 'index', intersect: false},
-            scales: {
-                x: { type: 'category', title: { display: true, text: 'Mes' } },
-                y: { title: { display: true, text: 'Valor' }, beginAtZero: false }
-            },
             plugins: {
-                tooltip: {enabled: true},
-                legend: { display: false } // Ocultar leyenda para gráficos individuales
-            }
+                title: {
+                    display: true,
+                    text: 'Concentración de indicadores por escala de riesgo',
+                    font: { size: 14, weight: 'bold' },
+                    padding: { top: 10, bottom: 20 }
+                },
+                legend: {
+                    display: true,
+                    position: 'right',
+                    labels: {
+                        boxWidth: 15,
+                        padding: 15,
+                        font: { size: 11 },
+                        // Mostrar cantidad y porcentaje en la leyenda
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            return data.labels.map((label, i) => {
+                                const value = data.datasets[0].data[i];
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return {
+                                    text: `${label}: ${value} (${percentage}%)`,
+                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                    hidden: false,
+                                    index: i
+                                };
+                            });
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} indicadores (${percentage}%)`;
+                        }
+                    }
+                },
+                // Plugin para mostrar texto central
+                beforeDraw: function(chart) {
+                    const width = chart.width;
+                    const height = chart.height;
+                    const ctx = chart.ctx;
+                    
+                    ctx.restore();
+                    const fontSize = (height / 160).toFixed(2);
+                    ctx.font = fontSize + "em Arial";
+                    ctx.textBaseline = "middle";
+                    ctx.textAlign = "center";
+                    
+                    const text = `${total}`;
+                    const textX = Math.round(width / 2);
+                    const textY = height / 2 - 10;
+                    
+                    ctx.fillStyle = "#000";
+                    ctx.fillText(text, textX, textY);
+                    
+                    // Texto "Indicadores evaluados"
+                    ctx.font = (fontSize * 0.5) + "em Arial";
+                    ctx.fillStyle = "#666";
+                    ctx.fillText("Indicadores evaluados", textX, textY + 20);
+                    
+                    ctx.save();
+                }
+            },
+            // Configuración del agujero de la dona (70% del radio)
+            cutout: '70%'
         }
     });
 }
 
-/* Initialize charts */
-fetchSarlChartData().done(function(data){
-    console.log("SARL Chart Data Received:", data); // Para depuración
-    destroyAllSarlCharts(); // Limpiar todos los gráficos SARL antes de redibujar
 
-    const chartsContainer = $('#sarl-charts-container');
-    chartsContainer.find('.sarl-trend-chart-wrapper').remove(); // Limpiar wrappers de gráficos de tendencia anteriores
-
-    if (data.trend_data && data.trend_data.length > 0) {
-        data.trend_data.forEach((indicatorData, index) => {
-            const canvasId = `sarl-trend-chart-${index}`;
-            const chartHtml = `
-                <div class="col-lg-6 mb-4 sarl-trend-chart-wrapper">
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <h5>${indicatorData.nombre_indicador}</h5>
-                            ${indicatorData.tipo ? '<small class="text-muted">Tipo: ' + indicatorData.tipo + '</small>' : ''}
-                        </div>
-                        <div class="card-body">
-                            <div style="height: 250px; position: relative;">
-                                <canvas id="${canvasId}"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            chartsContainer.append(chartHtml); 
-            renderIndividualTrendChartSarl(indicatorData, canvasId);
-        });
-    } else {
-        chartsContainer.prepend('<div class="col-12 sarl-trend-chart-wrapper"><p class="text-muted text-center py-5">No hay datos de tendencia SARL para mostrar.</p></div>');
+// =======================================================
+// GRÁFICO DE VELOCÍMETRO DE RIESGO (GAUGE)
+// =======================================================
+/**
+ * Renderiza un velocímetro semicircular que indica el nivel de riesgo promedio
+ * 
+ * @param {number} riskValue - Valor del riesgo (0-100)
+ * @param {string} canvasId - ID del canvas donde se renderizará
+ * 
+ * Rangos de riesgo:
+ * 0-20: Mínimo (Verde oscuro)
+ * 20-40: Bajo (Verde claro)
+ * 40-60: Medio (Amarillo)
+ * 60-80: Alto (Naranja)
+ * 80-100: Muy alto (Rojo)
+ */
+function renderRiskGaugeChart(riskValue, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error(`Canvas con ID ${canvasId} no encontrado.`);
+        return;
     }
 
-    // Renderizar los otros gráficos (Gauge, Pie, Bar)
-    if(data.indice_riesgo_general_sarl !== null) {
-        // Límites visuales para el gauge: Verde hasta 33%, Amarillo hasta 66%, Rojo hasta 100%
-        let visual_limits_gauge = {apetito_pct: 33.33, tolerancia_pct: 66.66, max_pct: 100};
-        renderGaugeChart(data.indice_riesgo_general_sarl, visual_limits_gauge);
-    } else {
-        $('#gauge-chart').parent().html('<p class="text-center text-muted py-5">No hay datos para el medidor de riesgo.</p>');
+    const ctx = canvas.getContext('2d');
+    
+    // Destruir gráfico previo si existe
+    if (window.gaugeCharts && window.gaugeCharts[canvasId]) {
+        window.gaugeCharts[canvasId].destroy();
     }
     
-    if (data.distribucion_porcentual && Object.keys(data.distribucion_porcentual).length > 0) {
-        renderPieChart(data.distribucion_porcentual);
-    } else {
-         $('#pie-chart').parent().html('<p class="text-center text-muted py-5">No hay datos para la distribución.</p>');
+    if (!window.gaugeCharts) {
+        window.gaugeCharts = {};
     }
 
-    if (data.frecuencia_niveles && Object.keys(data.frecuencia_niveles).length > 0) {
-        renderBarChart(data.frecuencia_niveles);
+    // Validar que el valor esté entre 0 y 100
+    riskValue = Math.max(0, Math.min(100, riskValue));
+
+    // Determinar la categoría de riesgo según el valor
+    let riskCategory = '';
+    let needleColor = '';
+    
+    if (riskValue <= 20) {
+        riskCategory = 'MÍNIMO';
+        needleColor = '#28a745';
+    } else if (riskValue <= 40) {
+        riskCategory = 'BAJO';
+        needleColor = '#a8d08d';
+    } else if (riskValue <= 60) {
+        riskCategory = 'MEDIO';
+        needleColor = '#ffc107';
+    } else if (riskValue <= 80) {
+        riskCategory = 'ALTO';
+        needleColor = '#fd7e14';
     } else {
-        $('#bar-chart').parent().html('<p class="text-center text-muted py-5">No hay datos para la frecuencia.</p>');
+        riskCategory = 'MUY ALTO';
+        needleColor = '#dc3545';
     }
-}).fail(function(jqXHR, textStatus, errorThrown) {
-    console.error("Error en fetchSarlChartData AJAX:", textStatus, errorThrown, jqXHR.responseText);
-    // Mostrar un mensaje de error general para los gráficos
-    $('#sarl-charts-container').find('.sarl-trend-chart-wrapper').remove(); // Limpiar wrappers existentes
-    $('#sarl-charts-container').prepend('<div class="col-12 sarl-trend-chart-wrapper"><p class="text-danger text-center py-5">Error al cargar datos para los gráficos de tendencia.</p></div>');
-    $('#gauge-chart').parent().html('<p class="text-danger text-center py-5">Error al cargar datos para el medidor.</p>');
-    $('#pie-chart').parent().html('<p class="text-danger text-center py-5">Error al cargar datos para la distribución.</p>');
-    $('#bar-chart').parent().html('<p class="text-danger text-center py-5">Error al cargar datos para la frecuencia.</p>');
+
+    // Crear datos para el gráfico semicircular
+    // Dividimos en 5 segmentos de 20% cada uno
+    const segmentData = [20, 20, 20, 20, 20]; // 5 segmentos iguales
+    const segmentColors = [
+        '#28a745',  // Mínimo (0-20)
+        '#a8d08d',  // Bajo (20-40)
+        '#ffc107',  // Medio (40-60)
+        '#fd7e14',  // Alto (60-80)
+        '#dc3545'   // Muy alto (80-100)
+    ];
+
+    window.gaugeCharts[canvasId] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Mínimo', 'Bajo', 'Medio', 'Alto', 'Muy alto'],
+            datasets: [{
+                data: segmentData,
+                backgroundColor: segmentColors,
+                borderWidth: 0,
+                circumference: 180,  // Semicírculo
+                rotation: 270        // Rotar para que inicie desde la izquierda
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false  // Ocultar leyenda
+                },
+                tooltip: {
+                    enabled: false  // Desactivar tooltips
+                },
+                // Plugin personalizado para dibujar la aguja y el texto
+                afterDraw: function(chart) {
+                    const width = chart.width;
+                    const height = chart.height;
+                    const ctx = chart.ctx;
+                    
+                    // Calcular ángulo de la aguja basado en el valor (0-100 -> 0-180 grados)
+                    const angle = (riskValue / 100) * Math.PI; // Convertir a radianes
+                    const needleAngle = Math.PI + angle; // Ajustar para que inicie desde la izquierda
+                    
+                    // Centro del gráfico
+                    const cx = width / 2;
+                    const cy = height * 0.85; // Ajustar posición vertical
+                    
+                    // Dibujar la aguja
+                    ctx.save();
+                    ctx.translate(cx, cy);
+                    ctx.rotate(needleAngle);
+                    ctx.beginPath();
+                    
+                    // Forma de la aguja (triángulo)
+                    const needleLength = height * 0.4;
+                    const needleWidth = 8;
+                    
+                    ctx.moveTo(0, -needleWidth / 2);
+                    ctx.lineTo(needleLength, 0);
+                    ctx.lineTo(0, needleWidth / 2);
+                    ctx.closePath();
+                    
+                    ctx.fillStyle = '#333';
+                    ctx.fill();
+                    ctx.restore();
+                    
+                    // Dibujar círculo central
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 12, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#333';
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    
+                    // Dibujar valor numérico en el centro
+                    ctx.font = 'bold 28px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = needleColor;
+                    ctx.fillText(riskValue.toFixed(1) + '%', cx, cy - height * 0.25);
+                    
+                    // Dibujar categoría de riesgo
+                    ctx.font = 'bold 16px Arial';
+                    ctx.fillStyle = '#333';
+                    ctx.fillText(riskCategory, cx, cy - height * 0.15);
+                    
+                    // Dibujar etiquetas de escala (0%, 50%, 100%)
+                    ctx.font = '12px Arial';
+                    ctx.fillStyle = '#666';
+                    
+                    // 0% (izquierda)
+                    ctx.textAlign = 'left';
+                    ctx.fillText('0%', width * 0.1, cy + 15);
+                    
+                    // 50% (centro)
+                    ctx.textAlign = 'center';
+                    ctx.fillText('50%', cx, cy - height * 0.45);
+                    
+                    // 100% (derecha)
+                    ctx.textAlign = 'right';
+                    ctx.fillText('100%', width * 0.9, cy + 15);
+                }
+            },
+            // Hacer que el gráfico sea un semicírculo
+            cutout: '70%'
+        }
+    });
+}
+
+
+// =======================================================
+// FUNCIÓN HELPER PARA CALCULAR RIESGO PROMEDIO
+// =======================================================
+/**
+ * Calcula el valor de riesgo promedio ponderado basado en la concentración
+ * 
+ * @param {Object} concentrationData - Datos de concentración por escala
+ * @returns {number} - Valor de riesgo promedio (0-100)
+ */
+function calculateAverageRisk(concentrationData) {
+    // Pesos por categoría (centrados en el rango)
+    const weights = {
+        'Muy alto': 90,
+        'Alto': 70,
+        'Medio': 50,
+        'Bajo': 30,
+        'Mínimo': 10
+    };
+    
+    let totalWeightedValue = 0;
+    let totalIndicators = 0;
+    
+    for (const [category, count] of Object.entries(concentrationData)) {
+        const weight = weights[category] || 50; // Default a medio si no existe
+        totalWeightedValue += weight * count;
+        totalIndicators += count;
+    }
+    
+    // Retornar promedio ponderado
+    return totalIndicators > 0 ? totalWeightedValue / totalIndicators : 0;
+}
+
+// ========================= 
+// INICIALIZACIÓN
+// =========================
+document.addEventListener('DOMContentLoaded', function() {
+    // Mover el scroll de las tablas al último mes
+    document.querySelectorAll('.table-responsive').forEach(function(el) {
+        el.scrollLeft = el.scrollWidth;
+    });
+
+    // Verificar si Chart.js está cargado
+    if (typeof Chart === 'undefined') {
+        console.error("Chart.js no está cargado");
+        showErrorMessage("Error: La librería de gráficos no está disponible.");
+        return;
+    }
+
+    // Cargar las gráficas
+    setTimeout(() => {
+        fetchSarlChartData();
+    }, 500);
 });
 
-$(window).on('beforeunload', destroyAllSarlCharts);
+// Limpiar gráficos al salir
+window.addEventListener('beforeunload', destroyAllSarlCharts);
+
 </script>
 {% endblock %}
