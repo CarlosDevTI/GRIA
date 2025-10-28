@@ -215,12 +215,14 @@ class DashboardSarcView(TemplateView):
             apetito, tolerancia, capacidad, riesgo = None, None, None, 'N/A'
             if parametro and all(p is not None for p in [parametro.apetito, parametro.tolerancia, parametro.capacidad]):
                 apetito, tolerancia, capacidad = parametro.apetito, parametro.tolerancia, parametro.capacidad
-                if valor_actual > capacidad:
-                    riesgo = 'Alto'
-                elif valor_actual > apetito:
-                    riesgo = 'Medio'
-                else:
+                print("valores: ",apetito, tolerancia, capacidad)
+                if valor_actual < apetito:
                     riesgo = 'Bajo'
+                else:    
+                    if valor_actual < capacidad & valor_actual > apetito:
+                        riesgo = 'Medio'
+                    else:
+                        riesgo = 'Alto'
             
             resultados.append({
                 "INDICADOR": nombre_indicador,
@@ -559,12 +561,13 @@ class DashboardSarLView(TemplateView):
             if parametro and all(p is not None for p in [parametro.apetito, parametro.tolerancia, parametro.capacidad]):
                 apetito, tolerancia, capacidad = parametro.apetito, parametro.tolerancia, parametro.capacidad
                 print("valores: ",apetito, tolerancia, capacidad)
-                if valor_actual > capacidad:
-                    riesgo = 'Alto'
-                elif valor_actual > apetito:
-                    riesgo = 'Medio'
-                else:
+                if valor_actual < apetito:
                     riesgo = 'Bajo'
+                else:    
+                    if valor_actual < capacidad & valor_actual > apetito:
+                        riesgo = 'Medio'
+                    else:
+                        riesgo = 'Alto'
             
             resultados.append({
                 "INDICADOR": nombre_indicador,
