@@ -558,6 +558,7 @@ class DashboardSarLView(TemplateView):
             apetito, tolerancia, capacidad, riesgo = None, None, None, 'N/A'
             if parametro and all(p is not None for p in [parametro.apetito, parametro.tolerancia, parametro.capacidad]):
                 apetito, tolerancia, capacidad = parametro.apetito, parametro.tolerancia, parametro.capacidad
+                print("valores: ",apetito, tolerancia, capacidad)
                 if valor_actual > capacidad:
                     riesgo = 'Alto'
                 elif valor_actual > apetito:
