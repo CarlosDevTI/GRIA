@@ -217,7 +217,7 @@ class DashboardSarcView(TemplateView):
                 apetito, tolerancia, capacidad = parametro.apetito, parametro.tolerancia, parametro.capacidad
                 if valor_actual > capacidad:
                     riesgo = 'Alto'
-                elif valor_actual > tolerancia:
+                elif valor_actual > apetito:
                     riesgo = 'Medio'
                 else:
                     riesgo = 'Bajo'
