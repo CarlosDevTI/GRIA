@@ -15,4 +15,5 @@ urlpatterns = [
     path('gria/riesgos/', include('apps.riesgos.urls')),
     path('gria/financiera/', include('apps.financiera.urls')),
     path('gria/cumplimiento/', include('apps.cumplimiento.urls')),  # Nueva ruta para la app cumplimiento
+    path('gria/gerencia/', include('apps.gerencia.urls')),
 ]
