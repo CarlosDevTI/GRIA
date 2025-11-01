@@ -42,6 +42,8 @@ class Reporte(models.Model):
     activo = models.BooleanField(default=True, help_text="Si no está activo, se mostrará como 'Próximamente'.")
     es_descarga = models.BooleanField(default=False, help_text="Marcar si este reporte es una descarga de archivo en lugar de una página de dashboard.")
     card_template = models.CharField(max_length=200, blank=True, null=True, help_text="Ruta a la plantilla de la tarjeta para este reporte (ej: 'gria/cards/_fondeos.html').")
+    orden = models.IntegerField(default=100, help_text="Orden de aparición de la tarjeta en el dashboard.")
+    tamaño = models.IntegerField(default=1, help_text="Tamaño de la tarjeta en el dashboard (1 o 2 columnas).")
 
 
     def __str__(self):

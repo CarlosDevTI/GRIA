@@ -28,6 +28,10 @@
         gap: 2rem;
         margin-bottom: 3rem;
     }
+
+    .kpi-card-span-2 {
+        grid-column: span 2;
+    }
     
     .kpi-card {
         background: white;
@@ -146,11 +150,13 @@
 <div class="kpi-grid">
     <!-- CAMBIAR LA ESTRUCTURA POR LA NUEVA REFACTORIZACIÓN -->
     {% for reporte in reportes_autorizados %}
-        {% if reporte.card_template %}
-            {% include reporte.card_template %}
-        {% else %}
-            {% include 'gria/cards/_default_card.html' %}
-        {% endif %}
+        <div class="{% if reporte.tamaño == 2 %}kpi-card-span-2{% endif %}">
+            {% if reporte.card_template %}
+                {% include reporte.card_template %}
+            {% else %}
+                {% include 'gria/cards/_default_card.html' %}
+            {% endif %}
+        </div>
     {% endfor %}
 </div>
 

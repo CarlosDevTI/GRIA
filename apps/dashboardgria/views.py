@@ -18,7 +18,9 @@ def gria_view(request):
             'icono_fa': 'fas fa-chart-bar',
             'activo': True,
             'es_descarga': False,
-            'card_template': 'gria/cards/indicadores_gerencia.html'
+            'card_template': 'gria/cards/indicadores_gerencia.html',
+            'orden': 1,
+            'tamaño': 2
         }
     )
 
@@ -31,10 +33,10 @@ def gria_view(request):
     reportes_autorizados = []
     if request.user.is_authenticated:
         if request.user.is_superuser:
-            reportes_autorizados = Reporte.objects.all()
+            reportes_autorizados = Reporte.objects.all().order_by('orden')
         else:
             grupo_del_usuario = request.user.groups.all()
-            reportes_autorizados = Reporte.objects.filter(grupos_permitidos__in=grupo_del_usuario).distinct()
+            reportes_autorizados = Reporte.objects.filter(grupos_permitidos__in=grupo_del_usuario).distinct().order_by('orden')
 
     context = {
         'reportes_autorizados': reportes_autorizados
