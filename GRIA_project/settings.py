@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',  # Agregar humanize para mejorar la presentación de números
     'apps.comercial',  # Agregar la aplicación comercial
     'apps.dashboardgria',  # Agregar la aplicación dashboard_gria'
     'apps.riesgos',  # Agregar la aplicación riesgos
@@ -138,7 +139,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-co'
 
 TIME_ZONE = 'UTC'
 

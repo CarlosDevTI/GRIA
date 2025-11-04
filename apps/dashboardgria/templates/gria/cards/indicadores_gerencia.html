@@ -1,16 +1,14 @@
-<div class="kpi-card">
-    <div class="kpi-icon">
-        <i class="{{ reporte.icono_fa }}"></i>
-    </div>
-    <h3 class="kpi-title">{{ reporte.nombre_visible }}</h3>
-    <p class="kpi-description">
-        {{ reporte.descripcion }}
-    </p>
+<div class="kpi-card-gerencia">
+    <div class="kpi-card-content-gerencia">
+        <div class="kpi-icon">
+            <i class="{{ reporte.icono_fa }}"></i>
+        </div>
+        <h3 class="kpi-title">{{ reporte.nombre_visible }}</h3>
 
-    <form id="form-indicadores-gerencia">
         <div class="mb-3">
-            <select name="agencia" id="agencia-indicadores" class="form-select">
-                <option value="0">Agencia Consolidado</option>
+            <label for="agencia-indicadores" class="form-label">Seleccionar Agencia:</label>
+            <select id="agencia-indicadores-select" class="form-select">
+                <option value="0" selected>Agencia Consolidado</option>
                 <option value="103">Acacias</option>
                 <option value="109">Barranca De Upia</option>
                 <option value="111">Cabuyaro</option>
@@ -38,66 +36,61 @@
                 <option value="209">Yopal</option>
             </select>
         </div>
-    </form>
 
-    <div id="indicadores-gerencia-table-container">
-        <table class="table table-bordered">
-            <thead class="table-dark">
-                <tr>
-                    <th>Item</th>
-                    <th>Cantidad Acumulado</th>
-                    <th>Cantidad a Hoy</th>
-                    <th>Monto Acumulado</th>
-                    <th>Monto a Hoy</th>
-                    <th>Meta Mensual</th>
-                </tr>
-            </thead>
-            <tbody id="indicadores-gerencia-tbody">
-                <!-- Data will be loaded here by JavaScript -->
-            </tbody>
-        </table>
+        <div id="indicadores-gerencia-table-container">
+            <!-- El contenido se cargará aquí vía JS -->
+        </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const agenciaSelect = document.getElementById('agencia-indicadores');
-    const tbody = document.getElementById('indicadores-gerencia-tbody');
+    const container = document.getElementById('indicadores-gerencia-table-container');
+    const select = document.getElementById('agencia-indicadores-select');
 
-    function fetchData(agenciaId) {
-        fetch(`/gria/gerencia/api/indicadores/${agenciaId}/`)
-            .then(response => response.json())
-            .then(data => {
-                tbody.innerHTML = ''; // Clear existing data
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay datos disponibles.</td></tr>';
-                } else {
-                    data.forEach(row => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${row.ITEM}</td>
-                            <td>${row.CANTIDADACUMULADA}</td>
-                            <td>${row.CANTIDAD}</td>
-                            <td>${row.MONTOACUMULADO}</td>
-                            <td>${row.MONTO}</td>
-                            <td>${row.METAMENSUAL}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
+    function loadIndicadores(agenciaId) {
+        // 1. Mostrar spinner de carga
+        container.innerHTML = `
+            <div class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <strong class="ms-3">Cargando datos...</strong>
+            </div>
+        `;
+
+        // 2. Construir la URL y hacer la petición fetch
+        const url = `{% url 'api_get_indicadores_gerencia' %}?agencia_id=${agenciaId}`;
+        
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                return response.text();
+            })
+            .then(html => {
+                // 3. Inyectar el HTML de la tabla en el contenedor
+                container.innerHTML = html;
             })
             .catch(error => {
-                console.error('Error fetching data:', error);
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Error al cargar los datos.</td></tr>';
+                // 4. Mostrar un mensaje de error si algo falla
+                console.error('Error al cargar los indicadores:', error);
+                container.innerHTML = `
+                    <div class="alert alert-danger text-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error al cargar los datos. Por favor, intente de nuevo más tarde.
+                    </div>
+                `;
             });
     }
 
-    // Fetch initial data
-    fetchData(agenciaSelect.value);
+    // Carga inicial de datos al cargar la página
+    loadIndicadores(select.value);
 
-    // Fetch data on select change
-    agenciaSelect.addEventListener('change', function() {
-        fetchData(this.value);
+    // Event listener para cuando cambia la selección de la agencia
+    select.addEventListener('change', function() {
+        loadIndicadores(this.value);
     });
 });
 </script>

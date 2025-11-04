@@ -1,0 +1,42 @@
+{% load humanize %}
+
+<style>
+    .indicadores-table th,
+    .indicadores-table td {
+        font-size: 0.8rem; /* Reduce el tamaño de la fuente */
+        padding: 0.4rem;   /* Reduce el espaciado interno de las celdas */
+        vertical-align: middle;
+    }
+</style>
+<div class="table-responsive">
+    <table class="table table-bordered table-hover indicadores-table">
+        <thead class="table-dark">
+            <tr>
+                <th>Item</th>
+                <th>Cant. Acumulado</th>
+                <th>Cant a Hoy</th>
+                <th>Monto Acumulado</th>
+                <th>Monto a Hoy</th>
+                <th>Meta Mensual</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if datos_gestion_diaria %}
+                {% for row in datos_gestion_diaria %}
+                <tr>
+                    <td><strong>{{ row.ITEM | default:"-" }}</strong></td>
+                    <td class="text-end">{% if row.CANTIDADACUMULADA %}{{ row.CANTIDADACUMULADA|intcomma }}{% else %}-{% endif %}</td>
+                    <td class="text-end">{% if row.CANTIDAD %}{{ row.CANTIDAD|intcomma }}{% else %}-{% endif %}</td>
+                    <td class="text-end">{% if row.MONTOACUMULADO %}${{ row.MONTOACUMULADO|intcomma }}{% else %}-{% endif %}</td>
+                    <td class="text-end">{% if row.MONTO %}${{ row.MONTO|intcomma }}{% else %}-{% endif %}</td>
+                    <td class="text-end">{% if row.METAMENSUAL %}${{ row.METAMENSUAL|intcomma }}{% else %}-{% endif %}</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No hay datos disponibles para esta agencia.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>

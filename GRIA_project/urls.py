@@ -10,10 +10,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Rutas de la aplicación principal
-    path('gria/', login_required(gria_views.gria_view), name='gria_dashboard'),
+    path('gria/', include('apps.dashboardgria.urls')),
     path('gria/comercial/', include('apps.comercial.urls')),
     path('gria/riesgos/', include('apps.riesgos.urls')),
     path('gria/financiera/', include('apps.financiera.urls')),
     path('gria/cumplimiento/', include('apps.cumplimiento.urls')),  # Nueva ruta para la app cumplimiento
-    path('gria/gerencia/', include('apps.gerencia.urls')),
 ]

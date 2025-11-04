@@ -40,14 +40,21 @@
         padding: 2rem;
         text-align: center;
         transition: all 0.3s ease;
-        cursor: pointer;
-        align-content: center;
     }
     
     .kpi-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         border-color: var(--secondary-color);
+    }
+    .kpi-card-gerencia {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 1rem 1rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        align-content: center;
     }
     
     .kpi-icon {
@@ -150,6 +157,8 @@
 <div class="kpi-grid">
     <!-- CAMBIAR LA ESTRUCTURA POR LA NUEVA REFACTORIZACIÓN -->
     {% for reporte in reportes_autorizados %}
+        <!-- DEBUG: Rendering reporte.identificador: {{ reporte.identificador }} -->
+        <!-- DEBUG: Card template: {{ reporte.card_template }} -->
         <div class="{% if reporte.tamaño == 2 %}kpi-card-span-2{% endif %}">
             {% if reporte.card_template %}
                 {% include reporte.card_template %}

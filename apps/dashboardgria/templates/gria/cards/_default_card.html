@@ -9,13 +9,14 @@
         onclick="showComingSoon('{{ reporte.nombre_visible }}')"
     {% endif %}>
 
-    <div class="kpi-icon">
-        <i class="{{ reporte.icono_fa }}"></i>
-    </div>
-    <h3 class="kpi-title">{{ reporte.nombre_visible }}</h3>
-    <p class="kpi-description">
-        {{ reporte.descripcion }}
-    </p>
+        <div class="kpi-icon">
+            <i class="{{ reporte.icono_fa }}"></i>
+        </div>
+        <h3 class="kpi-title">{{ reporte.nombre_visible }}</h3>
+        <p class="kpi-description">
+            {{ reporte.descripcion }}
+        </p>
+
     {% if reporte.activo %}
         {% if reporte.es_descarga or reporte.identificador == 'calidad-data' %}
             <span class="kpi-button">Descargar Excel</span>
