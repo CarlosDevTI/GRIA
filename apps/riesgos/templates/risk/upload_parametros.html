@@ -15,11 +15,12 @@
                 Suba un archivo Excel (.xlsx) o CSV (.csv) con los parametros de riesgo. La primera fila debe contener los encabezados de columna.
             </p>
             <div class="alert alert-info mb-3">
-                <small>La plantilla descargable ya incluye el campo <b>valor_override_mes</b> para aplicar valores manuales por mes y el campo opcional <b>sistema</b> para separar valores de SARC y SARL.</small>
+                <small>La plantilla descargable ya incluye el campo <b>valor_override_mes</b> para aplicar valores manuales por mes, el campo opcional <b>sistema</b> para separar valores de SARC y SARL, y <b>orden</b> (ASC/DESC) para la escala de riesgo de SARL.</small>
             </div>
             <h6>Columnas Esperadas:</h6>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item"><b>sistema</b>: (Opcional) Use <code>SARC</code> (por defecto) o <code>SARL</code> para definir a qué módulo pertenece el registro.</li>
+                <li class="list-group-item"><b>orden</b>: (Opcional, solo SARL) Use <code>ASC</code> o <code>DESC</code> para definir la escala de riesgo.</li>
                 <li class="list-group-item"><b>indicador_codigo</b>: (Obligatorio) Codigo del indicador (ej: 1, 13, 2G).</li>
                 <li class="list-group-item"><b>apetito</b>: (Opcional) Limite de apetito.</li>
                 <li class="list-group-item"><b>tolerancia</b>: (Opcional) Limite de tolerancia.</li>

@@ -1,4 +1,6 @@
-from django.db import models
+from pathlib import Path
+path = Path('apps/riesgos/models.py')
+text = '''from django.db import models
 
 class ParametrosRiesgo(models.Model):
     """
@@ -80,3 +82,5 @@ class ParametrosRiesgoSarL(models.Model):
         verbose_name = "Parametro de Riesgo SARL"
         verbose_name_plural = "Parametros de Riesgo SARL"
         ordering = ['indicador_codigo']
+'''
+path.write_text(text, encoding='utf-8')

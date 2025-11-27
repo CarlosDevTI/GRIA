@@ -89,9 +89,18 @@
                         <tbody>
                             {% for fila in tabla_riesgo_limites %}
                                 <tr>
-                                    <td class="{% if fila.RIESGO == 'Alto' %}risk-high{% elif fila.RIESGO == 'Medio' %}risk-medium{% else %}risk-low{% endif %}">
+                                    {% with r=fila.RIESGO|stringformat:"s" %}
+                                    <td class="
+                                        {% if r == 'MUY ALTO' or r == 'Muy alto' %}risk-muyalto
+                                        {% elif r == 'ALTO' or r == 'Alto' %}risk-alto
+                                        {% elif r == 'MEDIO' or r == 'Medio' %}risk-medio
+                                        {% elif r == 'BAJO' or r == 'Bajo' %}risk-bajo
+                                        {% elif r == 'MINIMO' or r == 'Mínimo' or r == 'Minimo' %}risk-minimo
+                                        {% else %}risk-desconocido{% endif %}
+                                    ">
                                         {{ fila.RIESGO }}
                                     </td>
+                                    {% endwith %}
                                     <td>{{ fila.APETITO|floatformat:1 }}%</td>
                                     <td>{{ fila.TOLERANCIA|floatformat:1 }}%</td>
                                     <td>{{ fila.CAPACIDAD|floatformat:1 }}%</td>
@@ -177,9 +186,18 @@
                         <tbody>
                             {% for fila in tabla_riesgo_indicadores %}
                                 <tr>
-                                    <td class="{% if fila.RIESGO == 'Alto' %}risk-high{% elif fila.RIESGO == 'Medio' %}risk-medium{% else %}risk-low{% endif %}">
+                                    {% with r=fila.RIESGO|stringformat:"s" %}
+                                    <td class="
+                                        {% if r == 'MUY ALTO' or r == 'Muy alto' %}risk-muyalto
+                                        {% elif r == 'ALTO' or r == 'Alto' %}risk-alto
+                                        {% elif r == 'MEDIO' or r == 'Medio' %}risk-medio
+                                        {% elif r == 'BAJO' or r == 'Bajo' %}risk-bajo
+                                        {% elif r == 'MINIMO' or r == 'Mínimo' or r == 'Minimo' %}risk-minimo
+                                        {% else %}risk-desconocido{% endif %}
+                                    ">
                                         {{ fila.RIESGO }}
                                     </td>
+                                    {% endwith %}
                                     <td>{{ fila.APETITO|floatformat:1 }}%</td>
                                     <td>{{ fila.TOLERANCIA|floatformat:1 }}%</td>
                                     <td>{{ fila.CAPACIDAD|floatformat:1 }}%</td>
@@ -311,21 +329,13 @@ console.log("Months columns:", {{ months_columns|length }});
         vertical-align: middle;
     }
 
-    /* Colores para los niveles de riesgo */
-    .risk-high {
-        background-color: #dc3545 !important;
-        color: white !important;
-    }
-
-    .risk-medium {
-        background-color: #FFE100 !important;
-        color: white !important;
-    }
-
-    .risk-low {
-        background-color: #28a745 !important;
-        color: white !important;
-    }
+    /* Colores para los niveles de riesgo (escala 5 rangos) */
+    .risk-muyalto { background-color: #c00000 !important; color: #fff !important; }
+    .risk-alto { background-color: #ff3b30 !important; color: #fff !important; }
+    .risk-medio { background-color: #d7c200ff !important; color: #000 !important; }
+    .risk-bajo { background-color: #fff307ff !important; color: #000 !important; }
+    .risk-minimo { background-color: #6fbf3f !important; color: #000 !important; }
+    .risk-desconocido { background-color: #6c757d !important; color: #fff !important; }
 
     .risk-header {
         background-color: #6c757d !important;

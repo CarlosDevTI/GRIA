@@ -205,9 +205,8 @@ class DashboardSarcView(TemplateView):
 
             parametro = parametros_manuales.get(ind_code)
 
-            # Logica para obtener el valor mas reciente basado en el campo MES
             datos_indicador_historicos = [
-                d for d in raw_data 
+                d for d in raw_data
                 if INDICADOR_MAP.get(str(d.get('INDICADOR', '')).strip()) == nombre_indicador and d.get('VALOR') is not None and d.get('MES') is not None
             ]
 
@@ -237,7 +236,11 @@ class DashboardSarcView(TemplateView):
                 if parametro.valor_override_mes.upper() == latest_month_key:
                     valor_actual = parametro.valor_override
 
-            apetito, tolerancia, capacidad, riesgo = None, None, None, 'N/A'
+            apetito = parametro.apetito if parametro else None
+            tolerancia = parametro.tolerancia if parametro else None
+            capacidad = parametro.capacidad if parametro else None
+
+            riesgo = 'N/A'
             if parametro and all(p is not None for p in [parametro.apetito, parametro.tolerancia, parametro.capacidad]):
                 apetito, tolerancia, capacidad = parametro.apetito, parametro.tolerancia, parametro.capacidad
                 if valor_actual < apetito:
@@ -312,10 +315,16 @@ class UploadParametrosRiesgoView(View):
                 model_cls = ParametrosRiesgo if sistema == 'SARC' else ParametrosRiesgoSarL
 
                 defaults = {}
-                for col in ['apetito', 'tolerancia', 'capacidad', 'valor_override', 'valor_override_mes']:
+                allowed_cols = ['apetito', 'tolerancia', 'capacidad', 'valor_override', 'valor_override_mes']
+                if hasattr(model_cls, 'orden'):
+                    allowed_cols.append('orden')
+
+                for col in allowed_cols:
                     if col in row and pd.notna(row[col]):
                         if col == 'valor_override_mes':
                             defaults[col] = str(row[col]).strip()
+                        elif col == 'orden':
+                            defaults[col] = str(row[col]).strip().upper()
                         else:
                             defaults[col] = row[col]
 
@@ -406,7 +415,8 @@ def descargar_plantilla_parametros(request):
         'tolerancia',
         'capacidad',
         'valor_override',
-        'valor_override_mes'
+        'valor_override_mes',
+        'orden'  # Solo para SARL (ASC o DESC)
     ]
     
     wb = openpyxl.Workbook()
@@ -578,11 +588,11 @@ class DashboardSarLView(TemplateView):
 
         for nombre_indicador in order_list:
             ind_code = map_name_to_code.get(nombre_indicador)
-            if not ind_code: continue
+            if not ind_code:
+                continue
 
             parametro = parametros_manuales.get(ind_code)
             
-            # Lógica para obtener el valor más reciente basado en el campo 'MES'
             datos_indicador_historicos = [
                 d for d in raw_data 
                 if SARL_INDICADOR_MAP.get(str(d.get('INDICADOR', '')).strip()) == nombre_indicador and d.get('VALOR') is not None and d.get('MES') is not None
@@ -590,7 +600,6 @@ class DashboardSarLView(TemplateView):
 
             valor_actual = 0
             if datos_indicador_historicos:
-                # Añadir fecha parseada y filtrar registros sin fecha válida
                 datos_con_fecha = []
                 for d in datos_indicador_historicos:
                     fecha_obj, _ = parse_fecha_mes(d.get('MES'))
@@ -598,7 +607,6 @@ class DashboardSarLView(TemplateView):
                         d['parsed_date'] = fecha_obj
                         datos_con_fecha.append(d)
 
-                # Si hay datos con fecha, ordenar y obtener el valor más reciente
                 if datos_con_fecha:
                     datos_con_fecha.sort(key=lambda x: x['parsed_date'], reverse=True)
                     registro_mas_reciente = datos_con_fecha[0]
@@ -616,16 +624,20 @@ class DashboardSarLView(TemplateView):
                 if parametro.valor_override_mes.upper() == latest_month_key:
                     valor_actual = parametro.valor_override
 
-            apetito, tolerancia, capacidad, riesgo = None, None, None, 'N/A'
-            if parametro and all(p is not None for p in [parametro.apetito, parametro.tolerancia, parametro.capacidad]):
-                apetito, tolerancia, capacidad = parametro.apetito, parametro.tolerancia, parametro.capacidad
-                if valor_actual < apetito:
-                    riesgo = 'Bajo'
-                else:    
-                    if valor_actual < capacidad and valor_actual > apetito:
-                        riesgo = 'Medio'
-                    else:
-                        riesgo = 'Alto'
+            apetito = parametro.apetito if parametro else None
+            tolerancia = parametro.tolerancia if parametro else None
+            capacidad = parametro.capacidad if parametro else None
+
+            riesgo = 'N/A'
+            if parametro and apetito is not None and tolerancia is not None:
+                r0 = (apetito - tolerancia) / 4
+                r1 = min(tolerancia, valor_actual)
+                thresholds = [r1, r1 + r0, r1 + 2 * r0, r1 + 3 * r0, r1 + 4 * r0]
+                labels = ['MINIMO', 'BAJO', 'MEDIO', 'ALTO', 'MUY ALTO'] if (parametro.orden == ParametrosRiesgoSarL.DESC) else ['MUY ALTO', 'ALTO', 'MEDIO', 'BAJO', 'MINIMO']
+                riesgo = labels[0]
+                for t, label in zip(thresholds, labels):
+                    if valor_actual >= t:
+                        riesgo = label
             
             resultados.append({
                 "INDICADOR": nombre_indicador,
