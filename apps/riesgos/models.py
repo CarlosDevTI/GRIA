@@ -34,3 +34,36 @@ class ParametrosRiesgo(models.Model):
         verbose_name = "Parámetro de Riesgo"
         verbose_name_plural = "Parámetros de Riesgo"
         ordering = ['indicador_codigo']
+
+
+class ParametrosRiesgoSarL(models.Model):
+    """
+    Parámetros de riesgo para SARL (separados de SARC para permitir valores independientes).
+    """
+    indicador_codigo = models.CharField(
+        max_length=10,
+        unique=True,
+        primary_key=True,
+        help_text="Código del indicador (ej. '1', '13', '2G') que coincide con el del SP de Oracle."
+    )
+
+    apetito = models.FloatField(verbose_name="Apetito", null=True, blank=True)
+    tolerancia = models.FloatField(verbose_name="Tolerancia", null=True, blank=True)
+    capacidad = models.FloatField(verbose_name="Capacidad", null=True, blank=True)
+
+    valor_override = models.FloatField(verbose_name="Valor Manual", null=True, blank=True)
+    valor_override_mes = models.CharField(
+        max_length=10,
+        null=True,
+        blank=True,
+        verbose_name="Mes del Valor Manual",
+        help_text="Mes para el valor de anulación (formato MES-AA, ej. OCT-23). Si está vacío, la anulación no se aplica."
+    )
+
+    def __str__(self):
+        return f"Parámetros SARL para el Indicador: {self.indicador_codigo}"
+
+    class Meta:
+        verbose_name = "Parámetro de Riesgo SARL"
+        verbose_name_plural = "Parámetros de Riesgo SARL"
+        ordering = ['indicador_codigo']

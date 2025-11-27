@@ -17,7 +17,7 @@ from openpyxl.styles import Font, Alignment, PatternFill
 
 from apps.accounts.decorators import role_required
 from .forms import UploadFileForm
-from .models import ParametrosRiesgo
+from .models import ParametrosRiesgo, ParametrosRiesgoSarL
 
 logger = logging.getLogger(__name__)
 
@@ -303,6 +303,14 @@ class UploadParametrosRiesgoView(View):
                 if not indicador_codigo:
                     continue
 
+                sistema_val = row.get('sistema', 'SARC')
+                if pd.isna(sistema_val):
+                    sistema_val = 'SARC'
+                sistema = str(sistema_val).strip().upper()
+                if sistema not in ['SARC', 'SARL']:
+                    sistema = 'SARC'
+                model_cls = ParametrosRiesgo if sistema == 'SARC' else ParametrosRiesgoSarL
+
                 defaults = {}
                 for col in ['apetito', 'tolerancia', 'capacidad', 'valor_override', 'valor_override_mes']:
                     if col in row and pd.notna(row[col]):
@@ -314,7 +322,7 @@ class UploadParametrosRiesgoView(View):
                 if not defaults:
                     continue
 
-                _, created = ParametrosRiesgo.objects.update_or_create(
+                _, created = model_cls.objects.update_or_create(
                     indicador_codigo=indicador_codigo,
                     defaults=defaults
                 )
@@ -392,6 +400,7 @@ def descargar_plantilla_parametros(request):
     El archivo contiene solo los encabezados de las columnas esperadas.
     """
     headers = [
+        'sistema',  # Opcional: SARC (por defecto) o SARL
         'indicador_codigo',
         'apetito',
         'tolerancia',
@@ -519,7 +528,7 @@ class DashboardSarLView(TemplateView):
         context = super().get_context_data(**kwargs)
         fecha_corte = get_fecha_corte()
         raw_data = obtener_datos_sarl_sp(fecha_corte)
-        parametros_manuales = {p.indicador_codigo: p for p in ParametrosRiesgo.objects.all()}
+        parametros_manuales = {p.indicador_codigo: p for p in ParametrosRiesgoSarL.objects.all()}
         
         unique_months = OrderedDict()
         for row in raw_data:
@@ -640,7 +649,7 @@ class DashboardSarLDataJsonView(TemplateView):
     def get(self, request, *args, **kwargs):
         fecha_corte = get_fecha_corte()
         raw_data = obtener_datos_sarl_sp(fecha_corte)
-        parametros_manuales = {p.indicador_codigo: p for p in ParametrosRiesgo.objects.all()}
+        parametros_manuales = {p.indicador_codigo: p for p in ParametrosRiesgoSarL.objects.all()}
         map_name_to_code = {v: k for k, v in SARL_INDICADOR_MAP.items()}
 
         indicators_data = {}
