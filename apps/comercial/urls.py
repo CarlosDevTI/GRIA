@@ -8,6 +8,12 @@ urlpatterns = [
     #* ----- ASOCIADOS SIN PRODUCTOS --------
     path('asociados-sin-productos/', views.asociados_sin_productos_view, name='asociados_sin_productos'),
     path('exportar-asociados-sin-productos-excel/', views.exportar_asociados_sin_productos_excel, name='exportar_asociados_sp'),
+    path('exportar-asociados-desactualizados-excel/', views.exportar_asociados_desactualizados_excel, name='exportar_asociados_desactualizados_excel'),
+    path('exportar-ahorros-programados-excel/', views.exportar_ahorros_programados_excel, name='exportar_ahorros_programados_excel'),
+    path('exportar-cdat-cancelados-excel/', views.exportar_cdat_cancelados_excel, name='exportar_cdat_cancelados_excel'),
+    path('exportar-creditos-cancelados-excel/', views.exportar_creditos_cancelados_excel, name='exportar_creditos_cancelados_excel'),
+    path('exportar-creditos-retanqueo-excel/', views.exportar_creditos_retanqueo_excel, name='exportar_creditos_retanqueo_excel'),
+    path('exportar-saldos-asociados-excel/', views.exportar_saldos_asociados_excel, name='exportar_saldos_asociados_excel'),
     #* ----- APORTES -----------
     path('aportes/', views.detalles_aportes, name='aportes'),
     path('exportar-aportes-excel/', views.exportar_excel_aportes, name='exportar_aportes_excel'),

@@ -165,8 +165,8 @@ class DashboardSarcView(TemplateView):
         context['limites_table_data'] = self._format_pivot_for_template(limites_pivot, months_columns, INDICADORES_LIMITES_ORDER)
         context['indicadores_table_data'] = self._format_pivot_for_template(indicadores_pivot, months_columns, INDICADORES_GRAFICABLES_ORDER)
         
-        context['tabla_riesgo_limites'] = self._generar_tabla_riesgo(raw_data, parametros_manuales, is_graphable=False)
-        context['tabla_riesgo_indicadores'] = self._generar_tabla_riesgo(raw_data, parametros_manuales, is_graphable=True)
+        context['tabla_riesgo_limites'] = self._generar_tabla_riesgo(raw_data, parametros_manuales, False, latest_month_key)
+        context['tabla_riesgo_indicadores'] = self._generar_tabla_riesgo(raw_data, parametros_manuales, True, latest_month_key)
 
         context['months_columns'] = months_columns
         return context
@@ -181,21 +181,18 @@ class DashboardSarcView(TemplateView):
                 continue
 
             valor = float(str(row['VALOR']).replace(',', '.'))
+            parametro = parametros_manuales.get(indicador_code)
+            if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
+                if month_key == parametro.valor_override_mes.upper():
+                    valor = parametro.valor_override
+            
             pivot_data.setdefault(nombre_descriptivo, {})[month_key] = valor
-
-        # Aplicar overrides después de procesar los datos base
-        if latest_month_key:
-            for indicador_code, parametro in parametros_manuales.items():
-                if parametro.valor_override is not None:
-                    nombre_descriptivo = INDICADOR_MAP.get(indicador_code)
-                    if nombre_descriptivo:
-                        pivot_data.setdefault(nombre_descriptivo, {})[latest_month_key] = parametro.valor_override
         
         limites_pivot = {k: v for k, v in pivot_data.items() if k in INDICADORES_LIMITES_ORDER}
         indicadores_pivot = {k: v for k, v in pivot_data.items() if k in INDICADORES_GRAFICABLES_ORDER}
         return limites_pivot, indicadores_pivot
 
-    def _generar_tabla_riesgo(self, raw_data, parametros_manuales, is_graphable):
+    def _generar_tabla_riesgo(self, raw_data, parametros_manuales, is_graphable, latest_month_key):
         resultados = []
         map_code_to_name = {k: v for k, v in INDICADOR_MAP.items()}
         map_name_to_code = {v: k for k, v in map_code_to_name.items()}
@@ -203,24 +200,26 @@ class DashboardSarcView(TemplateView):
 
         for nombre_indicador in order_list:
             ind_code = map_name_to_code.get(nombre_indicador)
-            if not ind_code: continue
+            if not ind_code:
+                continue
 
             parametro = parametros_manuales.get(ind_code)
 
-            # Lógica para obtener el valor más reciente basado en el campo 'MES'
-            datos_indicador_historicos = [d for d in raw_data if d.get('INDICADOR') == ind_code and d.get('VALOR') is not None and d.get('MES') is not None]
-            
+            # Logica para obtener el valor mas reciente basado en el campo MES
+            datos_indicador_historicos = [
+                d for d in raw_data 
+                if INDICADOR_MAP.get(str(d.get('INDICADOR', '')).strip()) == nombre_indicador and d.get('VALOR') is not None and d.get('MES') is not None
+            ]
+
             valor_actual = 0
             if datos_indicador_historicos:
-                # Añadir fecha parseada y filtrar registros sin fecha válida
                 datos_con_fecha = []
                 for d in datos_indicador_historicos:
                     fecha_obj, _ = parse_fecha_mes(d.get('MES'))
                     if fecha_obj:
                         d['parsed_date'] = fecha_obj
                         datos_con_fecha.append(d)
-                
-                # Si hay datos con fecha, ordenar y obtener el valor más reciente
+
                 if datos_con_fecha:
                     datos_con_fecha.sort(key=lambda x: x['parsed_date'], reverse=True)
                     registro_mas_reciente = datos_con_fecha[0]
@@ -229,20 +228,25 @@ class DashboardSarcView(TemplateView):
                     except (ValueError, TypeError):
                         valor_actual = 0
 
-            if parametro and parametro.valor_override is not None:
-                valor_actual = parametro.valor_override
+                    _, month_key = parse_fecha_mes(registro_mas_reciente.get('MES'))
+                    if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
+                        if month_key == parametro.valor_override_mes.upper():
+                            valor_actual = parametro.valor_override
+
+            elif parametro and parametro.valor_override is not None and parametro.valor_override_mes:
+                if parametro.valor_override_mes.upper() == latest_month_key:
+                    valor_actual = parametro.valor_override
 
             apetito, tolerancia, capacidad, riesgo = None, None, None, 'N/A'
             if parametro and all(p is not None for p in [parametro.apetito, parametro.tolerancia, parametro.capacidad]):
                 apetito, tolerancia, capacidad = parametro.apetito, parametro.tolerancia, parametro.capacidad
                 if valor_actual < apetito:
                     riesgo = 'Bajo'
-                else:    
-                    if valor_actual < capacidad and valor_actual > apetito:
-                        riesgo = 'Medio'
-                    else:
-                        riesgo = 'Alto'
-            
+                elif valor_actual < capacidad and valor_actual > apetito:
+                    riesgo = 'Medio'
+                else:
+                    riesgo = 'Alto'
+
             resultados.append({
                 "INDICADOR": nombre_indicador,
                 "RIESGO": riesgo,
@@ -300,9 +304,12 @@ class UploadParametrosRiesgoView(View):
                     continue
 
                 defaults = {}
-                for col in ['apetito', 'tolerancia', 'capacidad', 'valor_override']:
+                for col in ['apetito', 'tolerancia', 'capacidad', 'valor_override', 'valor_override_mes']:
                     if col in row and pd.notna(row[col]):
-                        defaults[col] = row[col]
+                        if col == 'valor_override_mes':
+                            defaults[col] = str(row[col]).strip()
+                        else:
+                            defaults[col] = row[col]
 
                 if not defaults:
                     continue
@@ -389,7 +396,8 @@ def descargar_plantilla_parametros(request):
         'apetito',
         'tolerancia',
         'capacidad',
-        'valor_override'
+        'valor_override',
+        'valor_override_mes'
     ]
     
     wb = openpyxl.Workbook()
@@ -527,8 +535,8 @@ class DashboardSarLView(TemplateView):
         context['limites_table_data'] = self._format_pivot_for_template(limites_pivot, months_columns, SARL_INDICADORES_NO_GRAFICABLES_ORDER)
         context['indicadores_table_data'] = self._format_pivot_for_template(indicadores_pivot, months_columns, SARL_INDICADORES_GRAFICABLES_ORDER)
         
-        context['tabla_riesgo_limites'] = self._generar_tabla_riesgo(raw_data, parametros_manuales, is_graphable=False)
-        context['tabla_riesgo_indicadores'] = self._generar_tabla_riesgo(raw_data, parametros_manuales, is_graphable=True)
+        context['tabla_riesgo_limites'] = self._generar_tabla_riesgo(raw_data, parametros_manuales, False, latest_month_key)
+        context['tabla_riesgo_indicadores'] = self._generar_tabla_riesgo(raw_data, parametros_manuales, True, latest_month_key)
 
         context['months_columns'] = months_columns
         return context
@@ -543,9 +551,9 @@ class DashboardSarLView(TemplateView):
                 continue
 
             valor = float(str(row['VALOR']).replace(',', '.'))
-            if month_key == latest_month_key:
-                parametro = parametros_manuales.get(indicador_code)
-                if parametro and parametro.valor_override is not None:
+            parametro = parametros_manuales.get(indicador_code)
+            if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
+                if month_key == parametro.valor_override_mes.upper():
                     valor = parametro.valor_override
             
             pivot_data.setdefault(nombre_descriptivo, {})[month_key] = valor
@@ -554,7 +562,7 @@ class DashboardSarLView(TemplateView):
         indicadores_pivot = {k: v for k, v in pivot_data.items() if k in SARL_INDICADORES_GRAFICABLES_ORDER}
         return limites_pivot, indicadores_pivot
 
-    def _generar_tabla_riesgo(self, raw_data, parametros_manuales, is_graphable):
+    def _generar_tabla_riesgo(self, raw_data, parametros_manuales, is_graphable, latest_month_key):
         resultados = []
         map_name_to_code = {v: k for k, v in SARL_INDICADOR_MAP.items()}
         order_list = SARL_INDICADORES_GRAFICABLES_ORDER if is_graphable else SARL_INDICADORES_NO_GRAFICABLES_ORDER
@@ -590,8 +598,14 @@ class DashboardSarLView(TemplateView):
                     except (ValueError, TypeError):
                         valor_actual = 0
 
-            if parametro and parametro.valor_override is not None:
-                valor_actual = parametro.valor_override
+                    _, month_key = parse_fecha_mes(registro_mas_reciente.get('MES'))
+                    if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
+                        if month_key == parametro.valor_override_mes.upper():
+                            valor_actual = parametro.valor_override
+            
+            elif parametro and parametro.valor_override is not None and parametro.valor_override_mes:
+                if parametro.valor_override_mes.upper() == latest_month_key:
+                    valor_actual = parametro.valor_override
 
             apetito, tolerancia, capacidad, riesgo = None, None, None, 'N/A'
             if parametro and all(p is not None for p in [parametro.apetito, parametro.tolerancia, parametro.capacidad]):

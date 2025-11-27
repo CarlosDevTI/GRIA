@@ -132,6 +132,48 @@ def asociados_sin_productos(agencia):
     """SP_COMEASOSINPRO"""
     return ejecutar_procedimiento('SP_COMEASOSINPRO', [agencia])
 
+#? --------------------------------------------------------------------------------
+#?    FUNCION REUTILIZABLE DE ASOCIADOS DESACTUALIZADOS
+#? --------------------------------------------------------------------------------
+def asociados_desactualizados(agencia):
+    """SP_COMEACTU"""
+    return ejecutar_procedimiento('SP_COMEACTU', [agencia])
+
+#? --------------------------------------------------------------------------------
+#?    FUNCION REUTILIZABLE DE AHORROS PROGRAMADOS INACTIVOS
+#? --------------------------------------------------------------------------------
+def ahorros_programados_inactivos(agencia):
+    """SP_INVERSIONESPROINAC"""
+    return ejecutar_procedimiento('SP_INVERSIONESPROINAC', [agencia])
+
+#? --------------------------------------------------------------------------------
+#?    FUNCION REUTILIZABLE DE CDAT CANCELADOS NO RENOVADOS
+#? --------------------------------------------------------------------------------
+def cdat_cancelados_no_renovados(agencia):
+    """SP_CDATNORENO"""
+    return ejecutar_procedimiento('SP_CDATNORENO', [agencia])
+
+#? --------------------------------------------------------------------------------
+#?    FUNCION REUTILIZABLE DE CREDITOS CANCELADOS NO RENOVADOS
+#? --------------------------------------------------------------------------------
+def creditos_cancelados_no_renovados(agencia):
+    """SP_COMECRECANNORENO"""
+    return ejecutar_procedimiento('SP_COMECRECANNORENO', [agencia])
+
+#? --------------------------------------------------------------------------------
+#?    FUNCION REUTILIZABLE DE RETANQUEOS DE CREDITO
+#? --------------------------------------------------------------------------------
+def creditos_retanqueo(agencia):
+    """SP_COMECRERETANQUEO"""
+    return ejecutar_procedimiento('SP_COMECRERETANQUEO', [agencia])
+
+#? --------------------------------------------------------------------------------
+#?    FUNCION REUTILIZABLE DE SALDOS ASOCIADOS (JUNIOR/CONAHORRITO)
+#? --------------------------------------------------------------------------------
+def saldos_asociados():
+    """SP_AHORRAJUNIORCONAHORRITO"""
+    return ejecutar_procedimiento('SP_AHORRAJUNIORCONAHORRITO', ['5'])
+
 
 #? ----------------------------------------------------------------
 #?     FUNCIÓN REUTILIZABLE PARA OBETENER LOS DATOS DE APORTES

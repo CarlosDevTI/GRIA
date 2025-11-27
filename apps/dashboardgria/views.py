@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.models import Group
+from django.urls import reverse, NoReverseMatch
 from .models import Reporte
 from django.conf import settings
 import oracledb
@@ -38,10 +39,29 @@ def gria_view(request):
     reportes_autorizados = []
     if request.user.is_authenticated:
         if request.user.is_superuser:
-            reportes_autorizados = Reporte.objects.all().order_by('orden')
+            reportes_autorizados = list(Reporte.objects.all().order_by('orden'))
         else:
             grupo_del_usuario = request.user.groups.all()
-            reportes_autorizados = Reporte.objects.filter(grupos_permitidos__in=grupo_del_usuario).distinct().order_by('orden')
+            reportes_autorizados = list(
+                Reporte.objects.filter(grupos_permitidos__in=grupo_del_usuario).distinct().order_by('orden')
+            )
+
+    default_action_name = 'exportar_asociados_sp'
+    try:
+        default_action_url = reverse(default_action_name)
+    except NoReverseMatch:
+        default_action_url = ''
+
+    for reporte in reportes_autorizados:
+        if reporte.card_template == 'gria/cards/filtro_agencias.html':
+            action_name = (reporte.url_name or '').strip()
+            if action_name:
+                try:
+                    reporte.form_action_url = reverse(action_name)
+                    continue
+                except NoReverseMatch:
+                    logger.warning("NoReverseMatch para %s, usando fallback.", action_name)
+            reporte.form_action_url = default_action_url
 
     # El contexto ahora solo pasa los reportes autorizados.
     # Los datos de la tarjeta se cargarán vía API.

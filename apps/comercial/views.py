@@ -122,6 +122,7 @@ def exportar_asociados_sin_productos_excel(request):
     
     return HttpResponse("Método no permitido.", status=405)
 
+
 #? ----------------------------------------------
 #?       VISTA DE DETALLES DE APORTES
 #? ----------------------------------------------
@@ -427,3 +428,149 @@ def generar_recaudo_aportes_detalle(request):
     except Exception as e:
         logger.error(f"Error inesperado al generar el reporte de aportes: {e}", exc_info=True)
         return HttpResponse("Ocurrió un error inesperado al generar el reporte.", status=500)
+
+
+@require_http_methods(["POST"])
+def exportar_asociados_desactualizados_excel(request):
+    agencia = request.POST.get("agencia")
+    if not agencia:
+        return HttpResponse("Agencia es requerida", status=400)
+
+    try:
+        datos = asociados_desactualizados(agencia)
+        headers = ["CORTE", "AGENCIA", "CEDULA", "NOMBRE", "DIRECCION",
+                   "TELEFONO", "BARRIO", "MAIL", "CELULAR",
+                   "FECHA_ACTUALIZACION", "FECHA_VINCULACION", "GESTION"]
+        return exportar_a_excel(
+            datos,
+            f"Asociados_desactualizados_{agencia}_{datetime.now().date()}",
+            headers
+        )
+    except ValueError as e:
+        return HttpResponse(str(e), status=400)
+    except Exception as exc:
+        logger.error("Error exportando asociados desactualizados: %s", exc, exc_info=True)
+        return HttpResponse("Error al generar el reporte.", status=500)
+
+
+@require_http_methods(["POST"])
+def exportar_ahorros_programados_excel(request):
+    agencia = request.POST.get("agencia")
+    if not agencia:
+        return HttpResponse("Agencia es requerida", status=400)
+
+    try:
+        datos = ahorros_programados_inactivos(agencia)
+        headers = [
+            "CORTE", "AGENCIA", "CEDULA", "NOMBRE", "DIRECCION", "TELEFONO",
+            "BARRIO", "MAIL", "CELULAR", "FECHA_APERTURA", "PRODUCTO",
+            "CUOTA", "NOMBRE_AHORRO", "SALDO", "GESTION"
+        ]
+        return exportar_a_excel(
+            datos,
+            f"ahorros_programados_{agencia}_{datetime.now().date()}",
+            headers
+        )
+    except ValueError as e:
+        return HttpResponse(str(e), status=400)
+    except Exception as exc:
+        logger.error("Error exportando ahorros programados: %s", exc, exc_info=True)
+        return HttpResponse("Error al generar el reporte.", status=500)
+
+
+@require_http_methods(["POST"])
+def exportar_cdat_cancelados_excel(request):
+    agencia = request.POST.get("agencia")
+    if not agencia:
+        return HttpResponse("Agencia es requerida", status=400)
+
+    try:
+        datos = cdat_cancelados_no_renovados(agencia)
+        headers = [
+            "CORTE", "AGENCIA", "CEDULA", "NOMBRE", "DIRECCION", "TELEFONO",
+            "BARRIO", "MAIL", "CELULAR", "MONTO_ULTIMO", "GESTION"
+        ]
+        return exportar_a_excel(
+            datos,
+            f"cdat_cancelados_no_renovados_{agencia}_{datetime.now().date()}",
+            headers
+        )
+    except ValueError as e:
+        return HttpResponse(str(e), status=400)
+    except Exception as exc:
+        logger.error("Error exportando CDAT cancelados: %s", exc, exc_info=True)
+        return HttpResponse("Error al generar el reporte.", status=500)
+
+
+@require_http_methods(["POST"])
+def exportar_creditos_cancelados_excel(request):
+    agencia = request.POST.get("agencia")
+    if not agencia:
+        return HttpResponse("Agencia es requerida", status=400)
+
+    try:
+        datos = creditos_cancelados_no_renovados(agencia)
+        headers = [
+            "CORTE", "AGENCIA", "CEDULA", "NOMBRE", "DIRECCION", "TELEFONO",
+            "BARRIO", "MAIL", "CELULAR", "LINEA_CREDITO", "PORCEN",
+            "CALIFICACION", "PAGARE", "MONTO", "GESTION"
+        ]
+        return exportar_a_excel(
+            datos,
+            f"creditos_cancelados_no_renovados_{agencia}_{datetime.now().date()}",
+            headers
+        )
+    except ValueError as e:
+        return HttpResponse(str(e), status=400)
+    except Exception as exc:
+        logger.error("Error exportando créditos cancelados: %s", exc, exc_info=True)
+        return HttpResponse("Error al generar el reporte.", status=500)
+
+
+@require_http_methods(["POST"])
+def exportar_creditos_retanqueo_excel(request):
+    agencia = request.POST.get("agencia")
+    if not agencia:
+        return HttpResponse("Agencia es requerida", status=400)
+
+    try:
+        datos = creditos_retanqueo(agencia)
+        headers = [
+            "CORTE", "AGENCIA", "CEDULA", "NOMBRE", "DIRECCION", "TELEFONO",
+            "BARRIO", "MAIL", "CELULAR", "LINEA_CREDITO", "PORCEN",
+            "CALIFCACION", "MONTO", "PAGARE", "GESTION"
+        ]
+        return exportar_a_excel(
+            datos,
+            f"retanqueos_{agencia}_{datetime.now().date()}",
+            headers
+        )
+    except ValueError as e:
+        return HttpResponse(str(e), status=400)
+    except Exception as exc:
+        logger.error("Error exportando retanqueos: %s", exc, exc_info=True)
+        return HttpResponse("Error al generar el reporte.", status=500)
+
+
+@require_http_methods(["POST"])
+def exportar_saldos_asociados_excel(request):
+    try:
+        datos = saldos_asociados()
+        headers = [
+            "AGENCIA", "CEDULA", "TIPODOC", "EDAD", "NOMBRE", "FECHA INGRESO",
+            "LOGEVIDAD", "CELULAR", "DIRECCION", "CIUDAD", "DEPARTAMENTO",
+            "PAIS", "TELEFONO", "CIUU", "MAIL", "PROFESION", "SEXO", "FECNAC",
+            "ESTRATO", "SALDO APORTES", "SALDO JUNIOR", "SALD OCONAHORRITO",
+            "SALDO AHORRAFACIL", "SALDO SEMILLA", "SALDO CDAT", "SALDO CREDITO",
+            "SALDO AHORROS PROGRAMADOS"
+        ]
+        return exportar_a_excel(
+            datos,
+            f"saldos_asociados_{datetime.now().date()}",
+            headers
+        )
+    except ValueError as e:
+        return HttpResponse(str(e), status=400)
+    except Exception as exc:
+        logger.error("Error exportando saldos de asociados: %s", exc, exc_info=True)
+        return HttpResponse("Error al generar el reporte.", status=500)
