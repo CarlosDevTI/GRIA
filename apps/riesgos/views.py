@@ -1,6 +1,6 @@
 import oracledb
 import logging
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from collections import OrderedDict
 from django.conf import settings
 from django.shortcuts import render, redirect
@@ -177,15 +177,25 @@ class DashboardSarcView(TemplateView):
             indicador_code = str(row.get('INDICADOR', '')).strip()
             nombre_descriptivo = INDICADOR_MAP.get(indicador_code)
             _, month_key = parse_fecha_mes(row.get('MES'))
-            if not all([nombre_descriptivo, month_key, row.get('VALOR') is not None]):
+            if not (nombre_descriptivo and month_key):
                 continue
 
-            valor = float(str(row['VALOR']).replace(',', '.'))
             parametro = parametros_manuales.get(indicador_code)
+            valor_raw = row.get('VALOR')
+            valor = None
+            if valor_raw is not None:
+                try:
+                    valor = float(str(valor_raw).replace(',', '.'))
+                except (ValueError, TypeError):
+                    valor = None
+
             if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
                 if month_key == parametro.valor_override_mes.upper():
                     valor = parametro.valor_override
             
+            if valor is None:
+                continue
+
             pivot_data.setdefault(nombre_descriptivo, {})[month_key] = valor
         
         limites_pivot = {k: v for k, v in pivot_data.items() if k in INDICADORES_LIMITES_ORDER}
@@ -205,32 +215,43 @@ class DashboardSarcView(TemplateView):
 
             parametro = parametros_manuales.get(ind_code)
 
-            datos_indicador_historicos = [
-                d for d in raw_data
-                if INDICADOR_MAP.get(str(d.get('INDICADOR', '')).strip()) == nombre_indicador and d.get('VALOR') is not None and d.get('MES') is not None
-            ]
+            datos_indicador_historicos = []
+            for d in raw_data:
+                if INDICADOR_MAP.get(str(d.get('INDICADOR', '')).strip()) != nombre_indicador or d.get('MES') is None:
+                    continue
+                fecha_obj, month_key = parse_fecha_mes(d.get('MES'))
+                if not fecha_obj or not month_key:
+                    continue
+
+                valor = d.get('VALOR')
+                if valor is not None:
+                    try:
+                        valor = float(str(valor).replace(',', '.'))
+                    except (ValueError, TypeError):
+                        valor = None
+
+                if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
+                    if month_key == parametro.valor_override_mes.upper():
+                        valor = parametro.valor_override
+
+                if valor is not None:
+                    d_copy = dict(d)
+                    d_copy['parsed_date'] = fecha_obj
+                    d_copy['valor_override_applied'] = True if (parametro and parametro.valor_override is not None and parametro.valor_override_mes and month_key == parametro.valor_override_mes.upper()) else False
+                    d_copy['VALOR'] = valor
+                    d_copy['parsed_month_key'] = month_key
+                    datos_indicador_historicos.append(d_copy)
 
             valor_actual = 0
             if datos_indicador_historicos:
-                datos_con_fecha = []
-                for d in datos_indicador_historicos:
-                    fecha_obj, _ = parse_fecha_mes(d.get('MES'))
-                    if fecha_obj:
-                        d['parsed_date'] = fecha_obj
-                        datos_con_fecha.append(d)
+                datos_indicador_historicos.sort(key=lambda x: x['parsed_date'], reverse=True)
+                registro_mas_reciente = datos_indicador_historicos[0]
+                valor_actual = registro_mas_reciente.get('VALOR', 0) or 0
 
-                if datos_con_fecha:
-                    datos_con_fecha.sort(key=lambda x: x['parsed_date'], reverse=True)
-                    registro_mas_reciente = datos_con_fecha[0]
-                    try:
-                        valor_actual = float(str(registro_mas_reciente['VALOR']).replace(',', '.'))
-                    except (ValueError, TypeError):
-                        valor_actual = 0
-
-                    _, month_key = parse_fecha_mes(registro_mas_reciente.get('MES'))
-                    if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
-                        if month_key == parametro.valor_override_mes.upper():
-                            valor_actual = parametro.valor_override
+                month_key = registro_mas_reciente.get('parsed_month_key')
+                if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
+                    if month_key == parametro.valor_override_mes.upper():
+                        valor_actual = registro_mas_reciente.get('VALOR', valor_actual)
 
             elif parametro and parametro.valor_override is not None and parametro.valor_override_mes:
                 if parametro.valor_override_mes.upper() == latest_month_key:
@@ -297,6 +318,48 @@ class UploadParametrosRiesgoView(View):
             df.columns = [col.strip().lower() for col in df.columns]
             updated_count, created_count = 0, 0
 
+            def _parse_decimal(value):
+                if pd.isna(value):
+                    return None
+                if isinstance(value, str):
+                    value = value.strip().replace(',', '.')
+                    if not value:
+                        return None
+                try:
+                    return float(value)
+                except (TypeError, ValueError):
+                    return None
+
+            def _normalize_month(value):
+                if pd.isna(value):
+                    return None
+                if isinstance(value, (pd.Timestamp, datetime, date)):
+                    eng_to_esp = {
+                        'JAN': 'ENE', 'FEB': 'FEB', 'MAR': 'MAR', 'APR': 'ABR',
+                        'MAY': 'MAY', 'JUN': 'JUN', 'JUL': 'JUL', 'AUG': 'AGO',
+                        'SEP': 'SEP', 'OCT': 'OCT', 'NOV': 'NOV', 'DEC': 'DIC'
+                    }
+                    eng_abbr = value.strftime('%b').upper()
+                    esp_abbr = eng_to_esp.get(eng_abbr, eng_abbr)
+                    return f"{esp_abbr}-{value.strftime('%y')}"
+
+                raw_text = str(value).strip()
+                if not raw_text:
+                    return None
+
+                _, month_key = parse_fecha_mes(raw_text)
+                if month_key:
+                    return month_key
+
+                try:
+                    parsed_dt = pd.to_datetime(raw_text, dayfirst=True, errors='coerce')
+                except Exception:
+                    parsed_dt = None
+
+                if pd.isna(parsed_dt):
+                    return None
+                return _normalize_month(parsed_dt)
+
             for _, row in df.iterrows():
                 indicador_codigo = row.get('indicador_codigo')
                 if pd.isna(indicador_codigo):
@@ -322,11 +385,18 @@ class UploadParametrosRiesgoView(View):
                 for col in allowed_cols:
                     if col in row and pd.notna(row[col]):
                         if col == 'valor_override_mes':
-                            defaults[col] = str(row[col]).strip()
+                            month_key = _normalize_month(row[col])
+                            if month_key:
+                                defaults[col] = month_key
                         elif col == 'orden':
                             defaults[col] = str(row[col]).strip().upper()
+                        elif col == 'valor_override':
+                            val = _parse_decimal(row[col])
+                            if val is not None:
+                                defaults[col] = val
                         else:
-                            defaults[col] = row[col]
+                            val = _parse_decimal(row[col])
+                            defaults[col] = val if val is not None else row[col]
 
                 if not defaults:
                     continue
@@ -566,15 +636,25 @@ class DashboardSarLView(TemplateView):
             indicador_code = str(row.get('INDICADOR', '')).strip()
             nombre_descriptivo = SARL_INDICADOR_MAP.get(indicador_code)
             _, month_key = parse_fecha_mes(row.get('MES'))
-            if not all([nombre_descriptivo, month_key, row.get('VALOR') is not None]):
+            if not (nombre_descriptivo and month_key):
                 continue
 
-            valor = float(str(row['VALOR']).replace(',', '.'))
             parametro = parametros_manuales.get(indicador_code)
+            valor_raw = row.get('VALOR')
+            valor = None
+            if valor_raw is not None:
+                try:
+                    valor = float(str(valor_raw).replace(',', '.'))
+                except (ValueError, TypeError):
+                    valor = None
+
             if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
                 if month_key == parametro.valor_override_mes.upper():
                     valor = parametro.valor_override
             
+            if valor is None:
+                continue
+
             pivot_data.setdefault(nombre_descriptivo, {})[month_key] = valor
         
         limites_pivot = {k: v for k, v in pivot_data.items() if k in SARL_INDICADORES_NO_GRAFICABLES_ORDER}
@@ -593,32 +673,42 @@ class DashboardSarLView(TemplateView):
 
             parametro = parametros_manuales.get(ind_code)
             
-            datos_indicador_historicos = [
-                d for d in raw_data 
-                if SARL_INDICADOR_MAP.get(str(d.get('INDICADOR', '')).strip()) == nombre_indicador and d.get('VALOR') is not None and d.get('MES') is not None
-            ]
+            datos_indicador_historicos = []
+            for d in raw_data:
+                if SARL_INDICADOR_MAP.get(str(d.get('INDICADOR', '')).strip()) != nombre_indicador or d.get('MES') is None:
+                    continue
+                fecha_obj, month_key = parse_fecha_mes(d.get('MES'))
+                if not fecha_obj or not month_key:
+                    continue
+
+                valor = d.get('VALOR')
+                if valor is not None:
+                    try:
+                        valor = float(str(valor).replace(',', '.'))
+                    except (ValueError, TypeError):
+                        valor = None
+
+                if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
+                    if month_key == parametro.valor_override_mes.upper():
+                        valor = parametro.valor_override
+
+                if valor is not None:
+                    d_copy = dict(d)
+                    d_copy['parsed_date'] = fecha_obj
+                    d_copy['VALOR'] = valor
+                    d_copy['parsed_month_key'] = month_key
+                    datos_indicador_historicos.append(d_copy)
 
             valor_actual = 0
             if datos_indicador_historicos:
-                datos_con_fecha = []
-                for d in datos_indicador_historicos:
-                    fecha_obj, _ = parse_fecha_mes(d.get('MES'))
-                    if fecha_obj:
-                        d['parsed_date'] = fecha_obj
-                        datos_con_fecha.append(d)
+                datos_indicador_historicos.sort(key=lambda x: x['parsed_date'], reverse=True)
+                registro_mas_reciente = datos_indicador_historicos[0]
+                valor_actual = registro_mas_reciente.get('VALOR', 0) or 0
 
-                if datos_con_fecha:
-                    datos_con_fecha.sort(key=lambda x: x['parsed_date'], reverse=True)
-                    registro_mas_reciente = datos_con_fecha[0]
-                    try:
-                        valor_actual = float(str(registro_mas_reciente['VALOR']).replace(',', '.'))
-                    except (ValueError, TypeError):
-                        valor_actual = 0
-
-                    _, month_key = parse_fecha_mes(registro_mas_reciente.get('MES'))
-                    if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
-                        if month_key == parametro.valor_override_mes.upper():
-                            valor_actual = parametro.valor_override
+                month_key = registro_mas_reciente.get('parsed_month_key')
+                if parametro and parametro.valor_override is not None and parametro.valor_override_mes:
+                    if month_key == parametro.valor_override_mes.upper():
+                        valor_actual = registro_mas_reciente.get('VALOR', valor_actual)
             
             elif parametro and parametro.valor_override is not None and parametro.valor_override_mes:
                 if parametro.valor_override_mes.upper() == latest_month_key:
