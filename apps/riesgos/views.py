@@ -721,13 +721,23 @@ class DashboardSarLView(TemplateView):
             riesgo = 'N/A'
             if parametro and apetito is not None and tolerancia is not None:
                 r0 = (apetito - tolerancia) / 4
-                r1 = min(tolerancia, valor_actual)
+                r1 = tolerancia
                 thresholds = [r1, r1 + r0, r1 + 2 * r0, r1 + 3 * r0, r1 + 4 * r0]
-                labels = ['MINIMO', 'BAJO', 'MEDIO', 'ALTO', 'MUY ALTO'] if (parametro.orden == ParametrosRiesgoSarL.DESC) else ['MUY ALTO', 'ALTO', 'MEDIO', 'BAJO', 'MINIMO']
-                riesgo = labels[0]
-                for t, label in zip(thresholds, labels):
-                    if valor_actual >= t:
-                        riesgo = label
+                if parametro.orden == ParametrosRiesgoSarL.DESC:
+                    # Descendente: riesgo más alto en tolerancia, más bajo en apetito.
+                    labels = ['MUY ALTO', 'ALTO', 'MEDIO', 'BAJO', 'MINIMO']
+                    riesgo = labels[0]
+                    for t, label in zip(thresholds, labels):
+                        if valor_actual >= t:
+                            riesgo = label
+                            break
+                else:
+                    # Ascendente: riesgo más alto en apetito, más bajo en tolerancia.
+                    labels = ['MUY ALTO', 'ALTO', 'MEDIO', 'BAJO', 'MINIMO']
+                    riesgo = labels[0]
+                    for t, label in zip(thresholds, labels):
+                        if valor_actual >= t:
+                            riesgo = label
             
             resultados.append({
                 "INDICADOR": nombre_indicador,
