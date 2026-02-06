@@ -264,9 +264,10 @@ class DashboardSarcView(TemplateView):
             riesgo = 'N/A'
             if parametro and all(p is not None for p in [parametro.apetito, parametro.tolerancia, parametro.capacidad]):
                 apetito, tolerancia, capacidad = parametro.apetito, parametro.tolerancia, parametro.capacidad
-                if valor_actual < apetito:
+                # Tratar igualdad como riesgo menor (ej: valor == apetito)
+                if valor_actual <= apetito:
                     riesgo = 'Bajo'
-                elif valor_actual < capacidad and valor_actual > apetito:
+                elif valor_actual <= capacidad and valor_actual > apetito:
                     riesgo = 'Medio'
                 else:
                     riesgo = 'Alto'
