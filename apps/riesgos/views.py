@@ -389,7 +389,12 @@ class UploadParametrosRiesgoView(View):
                             if month_key:
                                 defaults[col] = month_key
                         elif col == 'orden':
-                            defaults[col] = str(row[col]).strip().upper()
+                            orden_val = str(row[col]).strip().upper()
+                            if orden_val.startswith('DESC'):
+                                orden_val = 'DESC'
+                            elif orden_val.startswith('ASC'):
+                                orden_val = 'ASC'
+                            defaults[col] = orden_val
                         elif col == 'valor_override':
                             val = _parse_decimal(row[col])
                             if val is not None:
@@ -721,23 +726,15 @@ class DashboardSarLView(TemplateView):
             riesgo = 'N/A'
             if parametro and apetito is not None and tolerancia is not None:
                 r0 = abs(tolerancia - apetito) / 4
-                r1 = tolerancia
+                r1 = min(tolerancia, valor_actual)
                 thresholds = [r1, r1 + r0, r1 + 2 * r0, r1 + 3 * r0, r1 + 4 * r0]
-                if parametro.orden == ParametrosRiesgoSarL.DESC:
-                    # Descendente: riesgo más alto en tolerancia, más bajo en apetito.
-                    labels = ['MUY ALTO', 'ALTO', 'MEDIO', 'BAJO', 'MINIMO']
-                    riesgo = labels[0]
-                    for t, label in zip(thresholds, labels):
-                        if valor_actual >= t:
-                            riesgo = label
-                            break
-                else:
-                    # Ascendente: riesgo más alto en apetito, más bajo en tolerancia.
-                    labels = ['MUY ALTO', 'ALTO', 'MEDIO', 'BAJO', 'MINIMO']
-                    riesgo = labels[0]
-                    for t, label in zip(thresholds, labels):
-                        if valor_actual >= t:
-                            riesgo = label
+                orden_raw = (parametro.orden or '').strip().upper()
+                is_desc = orden_raw.startswith('DESC')
+                labels = ['MINIMO', 'BAJO', 'MEDIO', 'ALTO', 'MUY ALTO'] if is_desc else ['MUY ALTO', 'ALTO', 'MEDIO', 'BAJO', 'MINIMO']
+                riesgo = labels[0]
+                for t, label in zip(thresholds, labels):
+                    if valor_actual >= t:
+                        riesgo = label
             
             resultados.append({
                 "INDICADOR": nombre_indicador,
