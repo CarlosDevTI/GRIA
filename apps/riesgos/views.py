@@ -720,7 +720,7 @@ class DashboardSarLView(TemplateView):
 
             riesgo = 'N/A'
             if parametro and apetito is not None and tolerancia is not None:
-                r0 = (tolerancia - apetito) / 4
+                r0 = abs(tolerancia - apetito) / 4
                 r1 = tolerancia
                 thresholds = [r1, r1 + r0, r1 + 2 * r0, r1 + 3 * r0, r1 + 4 * r0]
                 if parametro.orden == ParametrosRiesgoSarL.DESC:
