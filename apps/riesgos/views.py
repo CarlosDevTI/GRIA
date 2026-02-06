@@ -726,10 +726,11 @@ class DashboardSarLView(TemplateView):
             riesgo = 'N/A'
             if parametro and apetito is not None and tolerancia is not None:
                 r0 = abs(tolerancia - apetito) / 4
-                r1 = min(tolerancia, valor_actual)
-                thresholds = [r1, r1 + r0, r1 + 2 * r0, r1 + 3 * r0, r1 + 4 * r0]
                 orden_raw = (parametro.orden or '').strip().upper()
                 is_desc = orden_raw.startswith('DESC')
+                # Descendente: parte desde apetito; Ascendente: parte desde tolerancia
+                r1 = apetito if is_desc else tolerancia
+                thresholds = [r1, r1 + r0, r1 + 2 * r0, r1 + 3 * r0, r1 + 4 * r0]
                 labels = ['MINIMO', 'BAJO', 'MEDIO', 'ALTO', 'MUY ALTO'] if is_desc else ['MUY ALTO', 'ALTO', 'MEDIO', 'BAJO', 'MINIMO']
                 riesgo = labels[0]
                 for t, label in zip(thresholds, labels):
