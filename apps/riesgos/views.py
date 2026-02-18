@@ -59,6 +59,13 @@ INDICADORES_GRAFICABLES_ORDER = [
     'Crecimiento Cartera Bruta',
 ]
 
+# Indicadores SARC cuyo riesgo se interpreta en sentido inverso.
+SARC_RIESGO_INVERSO = {
+    'Reverso General del Deterioro',
+    'Indicador De Cobertura',
+    'Relacion Riesgo / Mora',
+}
+
 # Mapa de código a nombre, usado para el procesamiento de datos.
 INDICADOR_MAP = {
     '1': 'Total Cartera',
@@ -271,6 +278,13 @@ class DashboardSarcView(TemplateView):
                     riesgo = 'Medio'
                 else:
                     riesgo = 'Alto'
+
+                # Estos 3 indicadores tienen lectura inversa en SARC.
+                if nombre_indicador in SARC_RIESGO_INVERSO:
+                    if riesgo == 'Bajo':
+                        riesgo = 'Alto'
+                    elif riesgo == 'Alto':
+                        riesgo = 'Bajo'
 
             resultados.append({
                 "INDICADOR": nombre_indicador,
